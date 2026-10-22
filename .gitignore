@@ -1,0 +1,9 @@
+data/matches/*
+!data/matches/.gitkeep
+__pycache__/
+.pytest_cache/
+engine/CMakeCache.txt
+engine/CMakeFiles/
+
+# Planning notes kept local until reviewed for publication
+docs/pipeline.md
