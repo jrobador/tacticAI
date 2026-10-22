@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: expose player and team names to Python.
 
 // written by bastiaan konings schuiling 2008 - 2014
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -260,6 +261,7 @@ struct PlayerInfo {
     tired_factor = f.tired_factor;
     role = f.role;
     designated_player = f.designated_player;
+    name = f.name;
   }
   bool operator == (const PlayerInfo& f) const {
     return player_position == f.player_position &&
@@ -268,7 +270,8 @@ struct PlayerInfo {
         is_active == f.is_active &&
         tired_factor == f.tired_factor &&
         role == f.role &&
-        designated_player == f.designated_player;
+        designated_player == f.designated_player &&
+        name == f.name;
   }
   Position player_position;
   Position player_direction;
@@ -277,6 +280,7 @@ struct PlayerInfo {
   bool designated_player = false;
   float tired_factor = 0.0f; // In the [0..1] range.
   e_PlayerRole role = e_PlayerRole_GK;
+  std::string name;  // player last name
 };
 
 struct ControllerInfo {
@@ -295,6 +299,7 @@ struct SharedInfo {
   Position ball_rotation;
   std::vector<PlayerInfo> left_team;
   std::vector<PlayerInfo> right_team;
+  std::string left_team_name, right_team_name, left_team_short, right_team_short;
   std::vector<ControllerInfo> left_controllers;
   std::vector<ControllerInfo> right_controllers;
   int left_goals, right_goals;

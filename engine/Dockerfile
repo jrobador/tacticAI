@@ -9,4 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . /engine
 WORKDIR /engine
 RUN rm -f CMakeCache.txt && cmake . && make -j4 && ln -sf libtai_engine.so _tai_engine.so
+ARG WITH_VIEWER=0
+RUN if [ "$WITH_VIEWER" = "1" ]; then apt-get update && apt-get install -y --no-install-recommends x11vnc novnc websockify && rm -rf /var/lib/apt/lists/*; fi
 ENV PYTHONPATH=/engine TAI_DATA_DIR=/engine/data TAI_FONT=/engine/fonts/AlegreyaSansSC-ExtraBold.ttf MESA_GL_VERSION_OVERRIDE=3.2 MESA_GLSL_VERSION_OVERRIDE=150

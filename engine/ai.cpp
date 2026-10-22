@@ -103,7 +103,8 @@ BOOST_PYTHON_MODULE(_tai_engine) {
       .def_readonly("has_card", &PlayerInfo::has_card)
       .def_readonly("is_active", &PlayerInfo::is_active)
       .def_readonly("role", &PlayerInfo::role)
-      .def_readonly("designated_player", &PlayerInfo::designated_player);
+      .def_readonly("designated_player", &PlayerInfo::designated_player)
+      .def_readonly("name", &PlayerInfo::name);
 
   class_<ControllerInfo>("ControllerInfo", init<int>())
       .add_property("controlled_player", &ControllerInfo::controlled_player);
@@ -117,6 +118,10 @@ BOOST_PYTHON_MODULE(_tai_engine) {
       .def_readonly("ball_direction", &SharedInfo::ball_direction)
       .def_readonly("left_team", &SharedInfo::left_team)
       .def_readonly("right_team", &SharedInfo::right_team)
+      .def_readonly("left_team_name", &SharedInfo::left_team_name)
+      .def_readonly("right_team_name", &SharedInfo::right_team_name)
+      .def_readonly("left_team_short", &SharedInfo::left_team_short)
+      .def_readonly("right_team_short", &SharedInfo::right_team_short)
       .def_readonly("left_goals", &SharedInfo::left_goals)
       .def_readonly("right_goals", &SharedInfo::right_goals)
       .def_readonly("is_in_play", &SharedInfo::is_in_play)

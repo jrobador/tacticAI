@@ -27,6 +27,17 @@ Generate a match (the engine runs only inside Docker; `xvfb-run` must be wrapped
 docker run --rm -v C:\Github\tacticAI:/work -e PYTHONPATH=/engine:/work/src tai-engine sh -c "xvfb-run -a -s '-screen 0 1280x720x24' python3 -m tacticai.ingest generate --seed N --out /work/data/matches"
 ```
 
+Watch the render live in a browser (noVNC). Development tool only (the production path is headless and delivers `video.mp4`). Build the image with the viewer and run it as `tai-engine:dev`:
+
+```
+docker build --build-arg WITH_VIEWER=1 -t tai-engine:dev engine
+docker run --rm -p 6080:6080 -v C:\Github\tacticAI:/work -e PYTHONPATH=/engine:/work/src tai-engine:dev sh /engine/tools/view.sh python3 -m tacticai.ingest generate --seed N --out /work/data/matches
+```
+
+Once, a run with the viewer attached hung forever inside the software renderer while the same seed completed headless; `--frame-timeout` guards against this.
+
+Then open `http://localhost:6080/vnc.html?autoconnect=1&resize=scale`.
+
 Infer events on the host (stdlib only):
 
 ```

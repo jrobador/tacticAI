@@ -47,15 +47,23 @@ class EngineMatch:
         for team, players in ((sc.left_team, left), (sc.right_team, right)):
             for x, y, role in players:
                 team.append(e.FormationEntry(x, y, getattr(e.e_PlayerRole, f"e_PlayerRole_{role}"), False, True))
+        self._roles = {int(v): k.replace("e_PlayerRole_", "") for k, v in e.e_PlayerRole.names.items()}
         env.start_game()
         env.state = e.GameState.game_running
         env.reset(sc, True)
+
+    def roster(self):
+        """Names and roles from the latest SharedInfo -> (left_full, left_short, left_players, right_full, ...).
+        players = [(last name, role name)] in the same order as the *_team arrays."""
+        i = self.info
+        pl = lambda t: [(p.name, self._roles[int(p.role)]) for p in getattr(i, f"{t}_team")]
+        return (i.left_team_name, i.left_team_short, pl("left"), i.right_team_name, i.right_team_short, pl("right"))
 
     def step(self):
         """Advance one engine frame -> (observation dict, BGR frame bytes)."""
         env = self.env
         env.step()
-        info = env.get_info()
+        self.info = info = env.get_info()
         fr = np.frombuffer(env.get_frame(), np.uint8).reshape(W, H, 3)
         rgb = np.concatenate([fr[:, :, 0], fr[:, :, 1], fr[:, :, 2]]).reshape(3, H, W).transpose(1, 2, 0)[::-1]
         return _observe(info), np.ascontiguousarray(rgb[:, :, ::-1]).tobytes()

@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: fill player and team names in the state.
 
 // written by bastiaan konings schuiling 2008 - 2015
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -795,6 +796,7 @@ void Match::GetTeamState(SharedInfo *state,
       info.has_card = player->HasCards();
       info.is_active = player->IsActive();
       info.role = player->GetFormationEntry().role;
+      if (player->GetPlayerData()) info.name = player->GetPlayerData()->GetLastName();
       if (player->HasPossession() && GetLastTouchTeamID() != -1 &&
           GetLastTouchTeam()->GetLastTouchPlayer() == player) {
         DO_VALIDATION;
@@ -805,6 +807,10 @@ void Match::GetTeamState(SharedInfo *state,
       team.push_back(info);
     }
   }
+  auto &full = team_id == 0 ? state->left_team_name : state->right_team_name;
+  auto &shrt = team_id == 0 ? state->left_team_short : state->right_team_short;
+  full = teams[team_id]->GetTeamData()->GetName();
+  shrt = teams[team_id]->GetTeamData()->GetShortName();
 }
 
 void Match::GetState(SharedInfo *state) {

@@ -15,6 +15,7 @@ def main():
     g.add_argument("--seed", type=int, required=True)
     g.add_argument("--steps", type=int, default=STEPS_PER_MATCH)
     g.add_argument("--out", default="data/matches")
+    g.add_argument("--frame-timeout", type=float, default=60.0, help="seconds without an engine frame before exiting with code 3")
     e = sub.add_parser("events", help="infer events from a match's tracking.jsonl")
     e.add_argument("match_dir")
     for k, v in DEFAULTS.items():
@@ -22,7 +23,7 @@ def main():
     a = ap.parse_args()
     if a.cmd == "generate":
         try:
-            out, rows, frames, mp4_frames = generate_match(a.seed, a.steps, a.out)
+            out, rows, frames, mp4_frames = generate_match(a.seed, a.steps, a.out, a.frame_timeout)
         except RuntimeError as err:
             sys.exit(f"ERROR: {err}")
         if mp4_frames != frames:

@@ -23,6 +23,7 @@ python -m tacticai.ingest events data/matches/match_N
 - Output per seed:
   - `video.mp4`: H.264, 1280×720, 10 fps, containing every engine frame.
   - `tracking.jsonl`: one line per in-play step.
+  - `roster.json`: names and roles per index of the `*_team` arrays (see Identity).
   - `meta.json`.
   - `events.jsonl` and `events_summary.json`.
 
@@ -68,6 +69,31 @@ Thresholds can be changed using flags. `tests/ingest/test_event_rules.py` (pytes
 ## Identity
 
 The teams are **Brackenford Athletic (BKA)**, in orange and white, and **Wexmoor City (WXC)**, in teal and navy, with 22 players who have invented names. The crests, the scoreboard's "tAI" logo, the ball, kits, and "TACTICAI SYNTHETIC MATCH" advertising boards are our own. Verified in the video: the scoreboard displays "tAI BKA 0 WXC 1" and the goal banner reads "GOAL FOR WEXMOOR CITY! MOSSVANE SCORES!".
+
+Player last names and team names (full and short) come from the engine, read in the same loop that fills the positions, so `players[i]` in `roster.json` is the player at index `i` of `left_team`/`right_team`. `roster.json` is built from the first in-play frame:
+
+```
+{"left": {"team": "<full>", "short": "<short>", "players": [{"index": 0, "name": "<last name>", "role": "GK"}, ...]}, "right": {...}}
+```
+
+`meta.json` `teams` holds the two short names (`{"left": "BKA", "right": "WXC"}`).
+
+## Frame timeout
+
+`generate --frame-timeout SECONDS` (default 60) starts a watchdog thread: if the engine produces no frame for that long, it prints `ERROR: render stalled: ...` to stderr and exits the process with code 3, because a call blocked in the renderer cannot be interrupted from Python. The outputs in the match directory are incomplete; there is no automatic retry.
+
+## Live viewer
+
+To watch the render in a browser while a match is generated (`engine/tools/view.sh` starts Xvfb, x11vnc and noVNC). Development tool only (the production path is headless and delivers `video.mp4`). Build the image with the viewer and run it as `tai-engine:dev`:
+
+```
+docker build --build-arg WITH_VIEWER=1 -t tai-engine:dev engine
+docker run --rm -p 6080:6080 -v C:\Github\tacticAI:/work -e PYTHONPATH=/engine:/work/src tai-engine:dev sh /engine/tools/view.sh python3 -m tacticai.ingest generate --seed N --out /work/data/matches
+```
+
+Once, a run with the viewer attached hung forever inside the software renderer while the same seed completed headless; `--frame-timeout` guards against this.
+
+Then open `http://localhost:6080/vnc.html?autoconnect=1&resize=scale`.
 
 ## Licenses
 
