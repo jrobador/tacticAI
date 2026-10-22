@@ -22,14 +22,12 @@ python -m tacticai.ingest events data/matches/match_N
 - A complete match takes about 11 minutes (seed 1: 3,000 steps, 3,322 frames).
 - Output per seed:
   - `video.mp4`: H.264, 1280×720, 10 fps, containing every engine frame.
-  - `tracking.jsonl`: one line per in-play step.
-  - `roster.json`: names and roles per index of the `*_team` arrays (see Identity).
-  - `meta.json`.
-  - `events.jsonl` and `events_summary.json`.
+  - `tracking.jsonl`, `roster.json`, `meta.json`, `events.jsonl`: the match package in the data contract, see [docs/contracts.md](../contracts.md). Tracking has one line per in-play frame; engine-specific facts are in `meta.json` under `source.synthetic`.
+  - `events_summary.json`: event totals and rates per minute of in-play physics time.
 
 ## Reproducibility
 
-With the same seed, `tracking.jsonl` and `video.mp4` are byte-for-byte identical. Verified with seed 7 and 300 steps across two runs. The seed determines:
+With the same seed, `tracking.jsonl` and `video.mp4` are byte-for-byte identical. Verified with seed 7 and 300 steps across two runs. Regression hash of the seed 7, 300-step `tracking.jsonl` (headless, contract format): `1bae5bc5dabcb48a837beaec434583d1631400ac2893ddc4e5d194effc3bf883` (the previous `b2cd47fc…` was the pre-contract format). The seed determines:
 
 - the physics seed;
 - the order in which teams are processed;
@@ -40,43 +38,39 @@ With the same seed, `tracking.jsonl` and `video.mp4` are byte-for-byte identical
 
 - Each engine frame represents 0.1 s of physics: 10 steps of 10 ms.
 - A step advances only while the ball is in play. The driver records every frame and emits a tracking row only while the ball is in play, so `frame_index` is exact by construction.
-- `engine_time_s = frame_index × 0.1` is the physics clock. It is used for speeds and to normalize event rates. During stoppages, the referee advances the internal clock by 0.4 s or 1.9 s without rendering.
-- `match_time_s = step × 0.1 / 0.0554`, or 1.8 s of match time per step, and is used **only to display the minute**. The on-screen clock runs about 1 s behind.
+- `t_s` (`engine_time_s`) `= frame_index × 0.1` is the physics clock. It is used for speeds and to normalize event rates. During stoppages, the referee advances the internal clock by 0.4 s or 1.9 s without rendering.
+- `clock_s` (`match_time_s`) `= step × 0.1 / 0.0554`, or 1.8 s of match time per step, and is used **only to display the minute**. The on-screen clock runs about 1 s behind. `step` is the in-play row counter and is not published.
 - The match has 3,000 in-play steps, totaling 300 s of physics and about 90' on the match clock. Halftime occurs at step 1,500: play resumes with the other team kicking off and without switching sides (verified in seed 1: the ball is at the center at step 1,501).
 
 ## Coordinates and units
 
 - The observation uses x ∈ [−1, 1] and y ∈ [−0.42, 0.42], with +y pointing toward the lower touchline. The left team (home team) attacks toward x = +1 throughout the match.
-- **Canonical scale (`*_eng`)**: `x × 54.4` and `y × 83.6` engine meters (110×72 pitch). Used for all calculations and event positions.
-- `*_m` (105×68: `x × 52.5`, `y × 34/0.42`) is used **only for drawing**.
-- Speed: `*_direction` is displacement per step (0.1 s). Formula: `v[m/s] = hypot(dx·54.4, dy·83.6) · 10`; in km/h, `× 3.6`.
+- **Published scale**: `x × 54.4` and `y × 83.6` engine meters (the contract's `x`/`y`, rounded to 3 decimals). `meta.pitch` is `length_m = 108.8`, `width_m = 70.2`. The engine pitch itself is 110×72 (`pitchHalfW=55`, `pitchHalfH=36`), so goalkeepers can stand slightly beyond the goal line (x ≈ ±55).
+- Speed: the engine's `*_direction` is displacement per step (0.1 s); the contract publishes `vx = dx·54.4·10` and `vy = dy·83.6·10` in m/s (`vz = dz·10` for the ball); in km/h, `× 3.6`.
 - `ball` is the average of the last 5 engine positions.
-- During set pieces, no one is listed as having possession of the ball. The taker is assigned to the player closest to the ball in the last step of the mode.
+- `possession` in the package is the engine ground truth (`ball_owned_team/player`). During set pieces no one is listed as owner.
+- Roles, game modes and teams map as in docs/contracts.md "Migration from the current package": roles in `e_PlayerRole` order (GK, CB, LB, RB, DM, CM, LM, RM, AM, CF), game modes in `e_GameMode` order, left = home, right = away.
 
 ## Events (`src/tacticai/ingest/domain/events.py`)
 
-Events are inferred from tracking data alone:
+Events are inferred from positions alone (the frame's `possession` field is never read). The owner of the ball is the nearest on-pitch player to the ball if within `owner_radius_m` and the ball is at most `owner_max_z_m` high (`infer_owner`); otherwise the ball is loose.
 
-- **Completed pass:** possession switches from A to B on the same team, with or without an intervening period when the ball is free.
-- **Interception:** possession switches to an opponent who is far from the ball carrier.
-- **Tackle:** an opponent is within 2 m of the ball carrier, with a gap of no more than 2 steps.
-- **Shot:** the ball leaves at 15 m/s or faster, projected toward goal within a ±2 m margin, from 35 m or less. Discarded if the next player to gain possession is a teammate.
-- **Goal:** the score changes.
-- **Set piece:** `game_mode` changes.
+- **Completed pass:** the inferred owner switches from A to B on the same team, with or without an intervening loose period.
+- **Interception:** the owner switches to an opponent who is far from the previous owner.
+- **Tackle:** an opponent is within 2 m of the previous owner, with a gap of no more than 2 frames.
+- **Shot:** the ball leaves at 15 m/s or faster, projected toward goal within a ±2 m margin, from 35 m or less. Discarded if the next inferred owner is a teammate.
+- **Goal:** the score changes; the scorer is the last inferred owner of the scoring team.
+- **Set piece:** `game_state` changes to anything but `open_play`; the taker is the player nearest the ball in the last frame of the state.
 
 Thresholds can be changed using flags. `tests/ingest/test_event_rules.py` (pytest) covers all event types, including 4 shot cases. The summary includes event rates per minute of in-play physics time. In seed 1, the two teams combined had 14.8 passes and 1.0 shots per minute, and the match ended 1-1.
 
 ## Identity
 
-The teams are **Brackenford Athletic (BKA)**, in orange and white, and **Wexmoor City (WXC)**, in teal and navy, with 22 players who have invented names. The crests, the scoreboard's "tAI" logo, the ball, kits, and "TACTICAI SYNTHETIC MATCH" advertising boards are our own. Verified in the video: the scoreboard displays "tAI BKA 0 WXC 1" and the goal banner reads "GOAL FOR WEXMOOR CITY! MOSSVANE SCORES!".
+The teams are **Brackenford Athletic (BKA)**, in orange and white, and **Wexmoor City (WXC)**, in teal and navy, with 22 players who have invented names. The branding is our own: the crests (a fern for BKA; sun, hills and tower for WXC), the "tAI" icon on the scoreboard, the kits (BKA orange with a navy diagonal sash and white shorts; WXC teal with navy hoops and navy sleeves) and 5 advertising board designs (the "tacticAI" logo, "Agentic Match Intelligence", BKA, WXC and "Every play, explained"), generated by `python engine/tools/apply_brand.py` from `assets/brand/source/`. Verified in the video: the scoreboard displays "tAI BKA 0 WXC 1" and the goal banner reads "GOAL FOR WEXMOOR CITY! MOSSVANE SCORES!".
 
-Player last names and team names (full and short) come from the engine, read in the same loop that fills the positions, so `players[i]` in `roster.json` is the player at index `i` of `left_team`/`right_team`. `roster.json` is built from the first in-play frame:
+Player last names and team names (full and short) come from the engine, read in the same loop that fills the positions. `roster.json` follows the contract (`player_id` = `home-NN` / `away-NN`, NN = index in the engine `left_team` / `right_team` array) and is built from the first in-play frame; the team names go to `meta.json` `teams`.
 
-```
-{"left": {"team": "<full>", "short": "<short>", "players": [{"index": 0, "name": "<last name>", "role": "GK"}, ...]}, "right": {...}}
-```
-
-`meta.json` `teams` holds the two short names (`{"left": "BKA", "right": "WXC"}`).
+`number` is the shirt number, deterministic per team from the role order (`domain/roster.py:shirt_numbers`): GK 1, then each player takes the first free number of its role's list (RB 2, LB 3, CB 5/4/6/15, DM 6/4/16, CM 8/10/14/16/18, LM 11/7/17, RM 7/11/19, AM 10/8/20, CF 9/10/19/21), else the lowest free number >= 12. It is not drawn on the kits; it is for overlays only.
 
 ## Frame timeout
 
@@ -94,6 +88,37 @@ docker run --rm -p 6080:6080 -v C:\Github\tacticAI:/work -e PYTHONPATH=/engine:/
 Once, a run with the viewer attached hung forever inside the software renderer while the same seed completed headless; `--frame-timeout` guards against this.
 
 Then open `http://localhost:6080/vnc.html?autoconnect=1&resize=scale`.
+
+## Recipes
+
+A recipe (`domain/recipe.py`, JSON via `from_dict`) says what to simulate. Run inside the engine image:
+
+```
+python3 -m tacticai.ingest generate --recipe recipe.json [--seed N] [--steps K] [--no-render] --out /work/data/matches
+```
+
+The recipe's `seed` is used when `--seed` is absent. Output goes to `<out>/recipe_<mode>_<seed>/`. `--no-render` also works for the legacy `generate --seed N` (identical `tracking.jsonl`, verified by sha256 on seed 7 with 300 steps). Headless needs no Xvfb.
+
+| Recipe | Engine field |
+|---|---|
+| `home` / `away` | left / right team |
+| `formation` | `FormationEntry` start positions (`kickoff_positions`, kickoff side = left if seed is even, else right) and `*_team_shape` (22 floats, `shape_vector`, always passed) |
+| `style` | `*_team_tactics` (12 floats in `TACTIC_KEYS` order, `tactics_for`) |
+| `level` | `*_team_difficulty` |
+| `full_match` | `game_duration` 3000, `second_half` 1500, default 3000 steps |
+| `situation` | `game_duration` = steps (default 300), `second_half` disabled |
+| `situation.positions` | replace the formation start positions (team-relative observation coords, `[x, y, role]`) |
+| `situation.ball` | `ball_position`; if null and `ball_owner` is set, 1 m in front of that team's most advanced outfield player; else the engine default (centre) |
+| `situation.ends_when` | `goal`, `possession_change`, `out_of_play`, `steps` |
+
+`ScenarioConfig.end_episode_on_*` are declared but never read by this engine, so the generate loop stops itself (`EndWatch` in `application/recipe_config.py`) on a score change, a ball owner change between the two teams, or the first frame after the start where the ball is out of play (`in_play` false or `game_mode` not normal). The run also stops at `steps` in-play rows.
+
+| Output | render | `--no-render` |
+|---|---|---|
+| `tracking.jsonl`, `roster.json`, `meta.json`, `recipe.json`, `events.jsonl`, `events_summary.json` | yes | yes |
+| `video.mp4` | yes | no |
+
+`meta.json` `source.synthetic` adds `recipe_mode`, `styles` (`home`/`away`) and `render`; `formations` holds the two formation names. Legacy runs have `recipe_mode: null`.
 
 ## Licenses
 

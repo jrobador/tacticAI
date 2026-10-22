@@ -68,8 +68,27 @@ Vector3 GetDefaultRolePosition(e_PlayerRole role) {
   }
 }
 
-TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
+// Fixed key order of ScenarioConfig.*_team_tactics.
+static const char* const kTacticKeys[12] = {
+    "dribble_centermagnet", "dribble_offensiveness",
+    "position_defense_depth_factor", "position_defense_microfocus_strength",
+    "position_defense_midfieldfocus", "position_defense_sidefocus_strength",
+    "position_defense_width_factor", "position_offense_depth_factor",
+    "position_offense_microfocus_strength", "position_offense_midfieldfocus",
+    "position_offense_sidefocus_strength", "position_offense_width_factor"};
+
+TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f,
+                   const std::vector<float> &tactics_override,
+                   const std::vector<float> &shape) {
   DO_VALIDATION;
+  if (!tactics_override.empty() && tactics_override.size() != 12) {
+    Log(e_FatalError, "TeamData", "TeamData",
+        "team tactics must have 0 or 12 values");
+  }
+  if (!shape.empty() && shape.size() != 22) {
+    Log(e_FatalError, "TeamData", "TeamData",
+        "team shape must have 0 or 22 values");
+  }
   formation.resize(f.empty() ? playerNum : f.size());
   int player_count = formation.size();
   color1.Set(0, 0, 0);
@@ -178,6 +197,10 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
             (*iter).second.children.find("position")->second.value);
         formation[num].role = GetRoleFromString(
             (*iter).second.children.find("role")->second.value);
+        if (shape.size() == 22 && !f.empty()) {
+          databasePosition = Vector3(shape[2 * num], shape[2 * num + 1], 0);
+          formation[num].role = f[num].role;
+        }
 
         // combine custom positions with hardcoded formation positions belonging
         // to certain roles. this way, more extreme user formation settings are
@@ -270,6 +293,12 @@ TeamData::TeamData(int teamDatabaseID, const std::vector<FormationEntry> &f) {
     tactics.userProperties.Set((*iter).first,
                                atof((*iter).second.value.c_str()));
     iter++;
+  }
+  if (tactics_override.size() == 12) {
+    for (int i = 0; i < 12; i++) {
+      tactics.userProperties.Set(kTacticKeys[i], tactics_override[i]);
+    }
+    tactics.scenario = true;
   }
   // factory tactics
 

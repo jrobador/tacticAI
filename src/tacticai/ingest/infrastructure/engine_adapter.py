@@ -29,21 +29,33 @@ def _observe(info):
 
 
 class EngineMatch:
-    def __init__(self, seed, left, right, total_steps, second_half_step):
-        """left/right: lists of (x, y, role name) from domain.formations.build_team."""
+    def __init__(self, seed, left, right, total_steps, second_half_step, render=True, left_tactics=None,
+                 right_tactics=None, left_shape=None, right_shape=None, ball=None,
+                 difficulty=(1.0, 1.0)):
+        """left/right: lists of (x, y, role name). tactics/shape: float lists or None (engine default).
+        ball: (x, y) or None. (ScenarioConfig.end_episode_on_* is never read by this engine; see EndWatch.)"""
         import _tai_engine as e  # imported here so host-side code works without the engine
         self.env = env = e.GameEnv()
         gc = env.game_config
         gc.physics_steps_per_frame, gc.render_resolution_x, gc.render_resolution_y, gc.render = \
-            PHYSICS_STEPS_PER_FRAME, W, H, True
+            PHYSICS_STEPS_PER_FRAME, W, H, render
+        self.render = render
         sc = e.ScenarioConfig.make()
         sc.game_duration = total_steps
         sc.second_half = second_half_step
-        sc.left_team_difficulty = sc.right_team_difficulty = 1.0
+        sc.left_team_difficulty, sc.right_team_difficulty = difficulty
         sc.deterministic = False
         sc.game_engine_random_seed = seed
         sc.reverse_team_processing = bool(seed % 2)
         sc.left_agents = sc.right_agents = 0
+        for name, v in (("left_team_tactics", left_tactics), ("right_team_tactics", right_tactics),
+                        ("left_team_shape", left_shape), ("right_team_shape", right_shape)):
+            if v:
+                fv = e.FloatVec()
+                fv.extend(v)
+                setattr(sc, name, fv)
+        if ball:
+            sc.ball_position[0], sc.ball_position[1] = ball
         for team, players in ((sc.left_team, left), (sc.right_team, right)):
             for x, y, role in players:
                 team.append(e.FormationEntry(x, y, getattr(e.e_PlayerRole, f"e_PlayerRole_{role}"), False, True))
@@ -59,11 +71,24 @@ class EngineMatch:
         pl = lambda t: [(p.name, self._roles[int(p.role)]) for p in getattr(i, f"{t}_team")]
         return (i.left_team_name, i.left_team_short, pl("left"), i.right_team_name, i.right_team_short, pl("right"))
 
+    @property
+    def done(self):
+        import _tai_engine as e
+        return self.env.state == e.GameState.game_done
+
+    def get_state(self):
+        return self.env.get_state("")
+
+    def set_state(self, blob):
+        return self.env.set_state(blob)
+
     def step(self):
-        """Advance one engine frame -> (observation dict, BGR frame bytes)."""
+        """Advance one engine frame -> (observation dict, BGR frame bytes or None when render=False)."""
         env = self.env
         env.step()
         self.info = info = env.get_info()
+        if not self.render:
+            return _observe(info), None
         fr = np.frombuffer(env.get_frame(), np.uint8).reshape(W, H, 3)
         rgb = np.concatenate([fr[:, :, 0], fr[:, :, 1], fr[:, :, 2]]).reshape(3, H, W).transpose(1, 2, 0)[::-1]
         return _observe(info), np.ascontiguousarray(rgb[:, :, ::-1]).tobytes()

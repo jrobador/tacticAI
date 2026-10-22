@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: per-team tactics and play shape from the scenario.
 
 // written by bastiaan konings schuiling 2008 - 2015
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -21,8 +22,12 @@
 #include <algorithm>
 
 MatchData::MatchData()
-    : teamData{TeamData(3, GetScenarioConfig().left_team),
-               TeamData(8, GetScenarioConfig().right_team)} {
+    : teamData{TeamData(3, GetScenarioConfig().left_team,
+                        GetScenarioConfig().left_team_tactics,
+                        GetScenarioConfig().left_team_shape),
+               TeamData(8, GetScenarioConfig().right_team,
+                        GetScenarioConfig().right_team_tactics,
+                        GetScenarioConfig().right_team_shape)} {
   goalCount[0] = 0;
   goalCount[1] = 0;
 

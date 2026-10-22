@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: set_state restores ballPredictions_mirrored on new mental images.
 
 // written by bastiaan konings schuiling 2008 - 2015
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -65,6 +66,9 @@ int MentalImage::GetTimeStampNeg_ms() const { return match->GetActualTime_ms() -
 
 void MentalImage::ProcessState(EnvState* state, Match* match) {
   this->match = match;
+  // Images created by the resize in Match::ProcessState missed the pre-load Mirror; align their flag with the
+  // match (as on the existing images), or their ball predictions end up mirrored after a load.
+  if (state->Load()) ballPredictions_mirrored = match->isBallMirrored();
   state->process(timeStamp_ms);
   state->process(maxDistanceDeviation);
   state->process(maxMovementDeviation);

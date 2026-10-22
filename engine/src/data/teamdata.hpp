@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: per-team tactics and play shape from the scenario.
 
 // written by bastiaan konings schuiling 2008 - 2015
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -26,12 +27,15 @@
 
 struct TeamTactics {
   Properties userProperties;
+  bool scenario = false;  // tactics came from the scenario
 };
 
 class TeamData {
 
   public:
-    TeamData(int teamDatabaseID, const std::vector<FormationEntry>& f);
+    TeamData(int teamDatabaseID, const std::vector<FormationEntry>& f,
+             const std::vector<float>& tactics_override = {},
+             const std::vector<float>& shape = {});
     ~TeamData();
 
     std::string GetName() const { return name; }

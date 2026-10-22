@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: per-team tactics and play shape from the scenario.
 
 // written by bastiaan konings schuiling 2008 - 2015
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -145,6 +146,10 @@ struct ScenarioConfig {
     state->process(offsides);
     state->process(left_team_difficulty);
     state->process(right_team_difficulty);
+    state->process(left_team_tactics);
+    state->process(right_team_tactics);
+    state->process(left_team_shape);
+    state->process(right_team_shape);
     state->process(deterministic);
     state->process(end_episode_on_score);
     state->process(end_episode_on_possession_change);
@@ -192,6 +197,12 @@ struct ScenarioConfig {
   float left_team_difficulty = 1.0;
   // Right team AI difficulty level, from 0.0 to 1.0.
   float right_team_difficulty = 0.6;
+  // Per-team tactics (empty = default, else 12 values; key order in teamdata.cpp).
+  std::vector<float> left_team_tactics;
+  std::vector<float> right_team_tactics;
+  // Per-team play shape in formation space (empty = default, else 22 = x,y per player).
+  std::vector<float> left_team_shape;
+  std::vector<float> right_team_shape;
   bool deterministic = false;
   bool end_episode_on_score = false;
   bool end_episode_on_possession_change = false;

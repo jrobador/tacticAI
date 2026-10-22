@@ -191,6 +191,10 @@ BOOST_PYTHON_MODULE(_tai_engine) {
                      &ScenarioConfig::left_team_difficulty)
       .def_readwrite("right_team_difficulty",
                      &ScenarioConfig::right_team_difficulty)
+      .def_readwrite("left_team_tactics", &ScenarioConfig::left_team_tactics)
+      .def_readwrite("right_team_tactics", &ScenarioConfig::right_team_tactics)
+      .def_readwrite("left_team_shape", &ScenarioConfig::left_team_shape)
+      .def_readwrite("right_team_shape", &ScenarioConfig::right_team_shape)
       .def_readwrite("deterministic", &ScenarioConfig::deterministic)
       .def_readwrite("end_episode_on_score",
                      &ScenarioConfig::end_episode_on_score)

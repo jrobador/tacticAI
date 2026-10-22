@@ -1,6 +1,11 @@
 import json
 
 
+def read_json(path):
+    with open(path) as f:
+        return json.load(f)
+
+
 def read_jsonl(path):
     with open(path) as f:
         return [json.loads(l) for l in f if l.strip()]

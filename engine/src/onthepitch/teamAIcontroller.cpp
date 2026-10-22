@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// Modified by the tacticAI project, 2026: wider tactics modifiers for scenario-provided tactics.
 
 // written by bastiaan konings schuiling 2008 - 2015
 // this work is public domain. the code is undocumented, scruffy, untested, and should generally not be used for anything important.
@@ -79,6 +80,16 @@ TeamAIController::TeamAIController(Team *team) : team(team) {
   teamTacticsModMultipliers.Set("position_defense_sidefocus_strength", 0.1f);
   teamTacticsModMultipliers.Set("position_offense_microfocus_strength", 0.15f);
   teamTacticsModMultipliers.Set("position_defense_microfocus_strength", 0.15f);
+
+  // wider modifiers, used only when the scenario provides the team's tactics
+  for (const char *side : {"offense", "defense"}) {
+    std::string s = std::string("position_") + side + "_";
+    scenarioTacticsModMultipliers.Set((s + "depth_factor").c_str(), 0.3f);
+    scenarioTacticsModMultipliers.Set((s + "width_factor").c_str(), 0.3f);
+    scenarioTacticsModMultipliers.Set((s + "sidefocus_strength").c_str(), 0.3f);
+    scenarioTacticsModMultipliers.Set((s + "midfieldfocus").c_str(), 0.6f);
+    scenarioTacticsModMultipliers.Set((s + "microfocus_strength").c_str(), 0.3f);
+  }
 
   offensivenessBias = 0.5f;
 
@@ -1257,7 +1268,8 @@ void TeamAIController::UpdateTactics() {
   map_Properties::const_iterator iter = userMods->begin();
   while (iter != userMods->end()) {
     DO_VALIDATION;
-    float multiplier = teamTacticsModMultipliers.GetReal(iter->first.c_str(), 0.0f);
+    float multiplier = (teamTactics.scenario ? scenarioTacticsModMultipliers : teamTacticsModMultipliers)
+                           .GetReal(iter->first.c_str(), 0.0f);
 
     float userOffset = atof(iter->second.c_str());
     float offset = userOffset;

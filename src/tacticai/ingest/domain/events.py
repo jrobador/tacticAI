@@ -1,102 +1,131 @@
-"""Pure event rules: infer football events from tracking rows (the engine exposes no events or actions)."""
+"""Pure event rules: football events from contract tracking frames, using positions only.
+The ball owner is inferred from positions (`infer_owner`); the frame's `possession` field is never read.
+Passes and tackles use the stabilized owners (`stable_owners`); shots and goals use the raw last touch (`infer_owner`)."""
 import math
 
 from .clock import FRAME_S
-from .pitch import ENG_X as KX, ENG_Y as KY, speed_m_s
+from .contract import team_of
 
-KINDS = {1: "kick_off", 2: "goal_kick", 3: "free_kick", 4: "corner", 5: "throw_in", 6: "penalty"}
-SIDE = {0: "left", 1: "right", None: None}
-DEFAULTS = dict(tackle_dist_m=2.0, tackle_max_gap=2, shot_min_speed=15.0, shot_goal_margin_m=2.0,
-                shot_max_dist_m=35.0, shot_debounce=10, goal_lookahead=30)
+POST_M = 3.66  # goal post |y| (Laws of the Game)
+DEFAULTS = dict(owner_radius_m=1.25, owner_max_z_m=1.0, tackle_dist_m=2.0, tackle_max_gap=2, shot_min_speed=15.0,
+                shot_goal_margin_m=2.0, shot_max_dist_m=35.0, shot_debounce=10, goal_lookahead=30,
+                owner_min_frames=3)
+
+
+def infer_owner(f, radius_m, max_z_m):
+    """(team, player_id) of the nearest on-pitch player to the ball in x/y if within radius_m and the ball is at most
+    max_z_m high, else None (loose)."""
+    b = f["ball"]
+    if b["z"] > max_z_m:
+        return None
+    d, pid = min(((math.dist((p["x"], p["y"]), (b["x"], b["y"])), p["player_id"]) for p in f["players"] if p["on_pitch"]),
+                 default=(math.inf, None))
+    return (team_of(pid), pid) if d <= radius_m else None
+
+
+def stable_owners(owners, min_frames):
+    """`owners` with every run of the same non-None owner shorter than min_frames replaced by None (loose ball); longer
+    runs are kept as is, so an event stays at the run's first frame. Consecutive LINES count as consecutive frames: v1
+    tracking has frame_index gaps (in-play frames only) and they are not treated as breaks. min_frames <= 1 is identity."""
+    out, i = list(owners), 0
+    while i < len(owners):
+        j = i
+        while j < len(owners) and owners[j] == owners[i]:
+            j += 1
+        if owners[i] is not None and j - i < min_frames:
+            out[i:j] = [None] * (j - i)
+        i = j
+    return out
 
 
 def speed(r):
-    return speed_m_s(r["ball_direction"][0], r["ball_direction"][1])
+    return math.hypot(r["ball"]["vx"], r["ball"]["vy"])
 
 
-def r2(p):
-    return None if p is None else [round(p[0], 2), round(p[1], 2)]
+def xy(r, pid):
+    return next((p["x"], p["y"]) for p in r["players"] if p["player_id"] == pid)
 
 
-def is_pass(rows, s, t):
+def is_break(a, b):
+    """Play stopped or a goal was scored between consecutive frames a -> b."""
+    return (a["game_state"] == "open_play" and b["game_state"] != "open_play") or a["score"] != b["score"]
+
+
+def is_pass(rows, owners, s, t):
     """True if the first owner after row s is team t (no decision -> False)."""
     for k in range(s + 1, len(rows)):
-        a, b = rows[k - 1], rows[k]
-        if (a["game_mode"] == 0 and b["game_mode"] != 0) or a["score"] != b["score"]:
+        if is_break(rows[k - 1], rows[k]):
             return False
-        if b["ball_owned_team"] != -1:
-            return b["ball_owned_team"] == t
+        if owners[k]:
+            return owners[k][0] == t
     return False
 
 
-def extract(rows, th):
+def extract(rows, th, length_m=108.8):
+    half = length_m / 2
+    raw = [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]  # shots, goals: one-touch shooters
+    owners = stable_owners(raw, th["owner_min_frames"])  # passes, tackles: possession changes
     ev = []
 
-    def add(r, typ, team, player, origin, dest, **kw):
-        ev.append(dict(step=r["step"], frame_index=r["frame_index"], match_time_s=r["match_time_s"],
-                       engine_time_s=r["engine_time_s"], type=typ, team=team, team_side=SIDE[team],
-                       player=player, **kw, origin_eng=r2(origin), dest_eng=r2(dest)))
+    def add(r, typ, team, pid, x, y, **kw):
+        ev.append(dict(type=typ, frame_index=r["frame_index"], t_s=r["t_s"], clock_s=r["clock_s"], period=r["period"],
+                       team=team, player_id=pid, x=round(x, 2), y=round(y, 2), **kw))
 
-    last = None  # (team, player, row index of last owned step)
-    last_shot = {0: -10**9, 1: -10**9}
+    last = None  # (team, player_id, row index of last stabilized-owned row)
+    touch = None  # (team, player_id) of the last raw owner before the current row
+    last_shot = {"home": -10**9, "away": -10**9}
     for i, r in enumerate(rows):
-        p = rows[i - 1] if i else None
+        p, b = rows[i - 1] if i else None, r["ball"]
+        if i and raw[i - 1]:
+            touch = raw[i - 1]
         if p and r["score"] != p["score"]:
-            t = 0 if r["score"][0] > p["score"][0] else 1
-            add(r, "goal", t, last[1] if last and last[0] == t else None, r["ball_eng"][:2], None,
-                last_owner_team=last[0] if last else None)
-        if p and r["game_mode"] != p["game_mode"] and r["game_mode"] in KINDS:
-            m, j = r["game_mode"], i
-            while j + 1 < len(rows) and rows[j + 1]["game_mode"] == m:
+            t = "home" if r["score"]["home"] > p["score"]["home"] else "away"
+            scorer = touch[1] if touch and touch[0] == t else None
+            add(r, "goal", t, scorer, b["x"], b["y"], scorer_id=scorer)
+        if p and r["game_state"] != p["game_state"] and r["game_state"] != "open_play":
+            m, j = r["game_state"], i
+            while j + 1 < len(rows) and rows[j + 1]["game_state"] == m:
                 j += 1
-            q, bx = rows[j], rows[j]["ball_eng"][:2]
-            d, t, pl = min((math.dist(xy, bx), tm, k) for tm, key in ((0, "left_team_eng"), (1, "right_team_eng"))
-                           for k, xy in enumerate(q[key]))
-            add(r, "set_piece", t, pl, r["ball_eng"][:2], None, kind=KINDS[m], taker_dist_m=round(d, 2))
-        if p and last and speed(r) >= th["shot_min_speed"] > speed(p):
-            t, (x, y, _), (dx, dy, _) = last[0], r["ball"], r["ball_direction"]
-            gx = 1 if t == 0 else -1
-            if dx * gx > 0 and i - last_shot[t] > th["shot_debounce"]:
-                yg = y + dy * (gx - x) / dx
-                if (abs(yg * KY) <= 3.68 + th["shot_goal_margin_m"] and abs(gx - x) * KX <= th["shot_max_dist_m"]
-                        and not is_pass(rows, i, t)):
+            q = rows[j]["ball"]
+            _, pid = min((math.dist((pl["x"], pl["y"]), (q["x"], q["y"])), pl["player_id"])
+                         for pl in rows[j]["players"] if pl["on_pitch"])
+            add(r, "set_piece", team_of(pid), pid, b["x"], b["y"], kind=m)
+        if p and touch and speed(r) >= th["shot_min_speed"] > speed(p):
+            t = touch[0]
+            gx = half if t == "home" else -half
+            if b["vx"] * gx > 0 and i - last_shot[t] > th["shot_debounce"]:
+                yg = b["y"] + b["vy"] * (gx - b["x"]) / b["vx"]
+                if (abs(yg) <= POST_M + th["shot_goal_margin_m"] and abs(gx - b["x"]) <= th["shot_max_dist_m"]
+                        and not is_pass(rows, owners, i, t)):
                     last_shot[t] = i
                     goal = any(q["score"][t] > r["score"][t] for q in rows[i + 1:i + 1 + th["goal_lookahead"]])
-                    add(r, "shot", t, last[1], r["ball_eng"][:2], [gx * KX, yg * KY],
+                    add(r, "shot", t, touch[1], b["x"], b["y"], end_x=round(gx, 2), end_y=round(yg, 2),
                         speed_m_s=round(speed(r), 2), outcome="goal" if goal else "no_goal")
-        t2, p2 = r["ball_owned_team"], r["ball_owned_player"]
-        if t2 == -1:
+        if not owners[i]:
             continue
-        if last and (t2, p2) != last[:2]:
-            t1, p1, li = last
-            brk = any((rows[k - 1]["game_mode"] == 0 and rows[k]["game_mode"] != 0)
-                      or rows[k]["score"] != rows[k - 1]["score"] for k in range(li + 1, i + 1))
-            if not brk:
-                lr = rows[li]
-                o, d = lr["ball_eng"][:2], r["ball_eng"][:2]
+        if last and owners[i] != last[:2]:
+            (t1, p1, li), (t2, p2) = last, owners[i]
+            if not any(is_break(rows[k - 1], rows[k]) for k in range(li + 1, i + 1)):
+                o = rows[li]["ball"]
+                end = dict(end_x=round(b["x"], 2), end_y=round(b["y"], 2))
                 if t2 == t1:
-                    add(r, "pass", t1, p1, o, d, from_player=p1, to_player=p2, outcome="complete")
+                    add(r, "pass", t1, p1, o["x"], o["y"], to_player_id=p2, **end, outcome="complete", intercepted_by=None)
+                elif i - li <= th["tackle_max_gap"] and math.dist(xy(rows[li], p1), xy(rows[li], p2)) < th["tackle_dist_m"]:
+                    add(r, "tackle", t2, p2, b["x"], b["y"], from_player_id=p1)
                 else:
-                    a = lr["left_team_eng" if t1 == 0 else "right_team_eng"][p1]
-                    b = lr["left_team_eng" if t2 == 0 else "right_team_eng"][p2]
-                    if i - li <= th["tackle_max_gap"] and math.dist(a, b) < th["tackle_dist_m"]:
-                        add(r, "tackle", t2, p2, o, d, from_player=p1)
-                    else:
-                        add(r, "pass", t1, p1, o, d, from_player=p1, outcome="intercepted",
-                            intercepted_by=dict(team=t2, player=p2))
-        last = (t2, p2, i)
-    ev.sort(key=lambda e: e["step"])
+                    add(r, "pass", t1, p1, o["x"], o["y"], to_player_id=None, **end, outcome="intercepted", intercepted_by=p2)
+        last = (*owners[i], i)
+    ev.sort(key=lambda e: e["t_s"])
     return ev
 
 
-def summarize(ev, steps, th):
-    mins = steps * FRAME_S / 60
-    s = dict(thresholds=th, steps=steps, in_play_engine_minutes=round(mins, 3),
-             normalization_note="per minute of in-play engine time (steps*0.1 s); compare against real football "
-                                "per minute of effective playing time, not per 90'",
-             set_pieces_unattributed=sum(e["type"] == "set_piece" and e["team"] is None for e in ev))
-    for t, side in ((0, "left"), (1, "right")):
-        mine = [e for e in ev if e["team"] == t]
+def summarize(ev, frames, th):
+    mins = frames * FRAME_S / 60
+    s = dict(thresholds=th, frames=frames, in_play_engine_minutes=round(mins, 3),
+             normalization_note="per minute of in-play engine time (frames*0.1 s); compare against real football "
+                                "per minute of effective playing time, not per 90 minutes")
+    for side in ("home", "away"):
+        mine = [e for e in ev if e["team"] == side]
         pas = [e for e in mine if e["type"] == "pass"]
         done = sum(e["outcome"] == "complete" for e in pas)
         shots = sum(e["type"] == "shot" for e in mine)
@@ -113,6 +142,6 @@ def summarize(ev, steps, th):
             passes_attempted=len(pas), passes_completed=done, interceptions_suffered=s[side]["interceptions_suffered"],
             tackles_won=s[side]["tackles_won"], shots=shots, goals=s[side]["goals"],
             set_pieces_total=sum(sp.values())).items()}
-    s["both_teams_per_engine_minute"] = {k: round(s["left"]["per_engine_minute"][k] + s["right"]["per_engine_minute"][k], 2)
-                                         for k in s["left"]["per_engine_minute"]}
+    s["both_teams_per_engine_minute"] = {k: round(s["home"]["per_engine_minute"][k] + s["away"]["per_engine_minute"][k], 2)
+                                         for k in s["home"]["per_engine_minute"]}
     return s

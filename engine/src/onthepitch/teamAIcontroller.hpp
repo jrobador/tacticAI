@@ -83,6 +83,7 @@ class TeamAIController {
 
     Properties baseTeamTactics;
     Properties teamTacticsModMultipliers;
+    Properties scenarioTacticsModMultipliers;
     Properties liveTeamTactics;
 
     float offensivenessBias = 0.0f;
