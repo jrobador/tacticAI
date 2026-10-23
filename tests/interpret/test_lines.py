@@ -40,3 +40,8 @@ def test_lines_broken_away():
     assert opponent_lines(home, "away") == [11, 23, 35]  # away frame: x_att = -x
     assert lines_broken(ev("away", -5, -30), home) == 2
     assert lines_broken(ev("away", -30, -5), home) == 0  # backwards
+
+
+def test_lines_crossed_any_outcome():
+    from tacticai.interpret.domain.lines import lines_crossed
+    assert lines_crossed(ev("home", 5, 30, "intercepted"), away_row(THREE)) == 2

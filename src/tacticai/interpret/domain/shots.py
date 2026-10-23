@@ -2,7 +2,7 @@
 Owners follow the ingest rules (infer_owner raw touch, stable_owners for is_pass); the labels never read ingest events."""
 import math
 
-from ...ingest.domain.events import POST_M, infer_owner, is_pass, speed, stable_owners
+from ...ingest.domain.events import DEFAULTS, NOT_SHOT_STATES, POST_M, infer_owner, is_pass, speed, stable_owners
 
 MIN_SPEED, JUMP_M_S, MAX_DIST_M, DEBOUNCE, LOOKAHEAD_S, HALF_G = 10.0, 5.0, 40.0, 10, 3.0, 4.905
 BOX_DEPTH_M, BOX_HALF_W_M, CROSSBAR_M = 16.5, 20.16, 2.44
@@ -122,3 +122,13 @@ def kick_candidates(rows, roster, meta, th, events=None):
             opponents=[[round(p["x"], 2), round(p["y"], 2), p["role"]] for p in opps],
             goal=outcome == "goal", goal_in_sequence=seq, next_owner_team=nxt and nxt[0], next_owner_role=nxt and nxt[2], outcome=outcome))
     return res
+
+
+SHOT_MIN_SPEED, SHOT_MAX_ABS_Y_M = DEFAULTS["shot_min_speed"], DEFAULTS["shot_max_abs_y_m"]  # rule owned by ingest
+
+
+def is_shot(k):
+    """The shot rule, single owner. Approved from data (horizontal speed is bimodal: 10-18 m/s are mostly blocked passes, 6 goals in 587 kicks;
+    >= 22 m/s 270 goals in 1021) and video review of 10 borderline cases. Uses the outcome label, so it is for datasets and analysis, not live."""
+    return (k["speed_m_s"] >= SHOT_MIN_SPEED and abs(k["projected_y_at_goal_m"]) <= SHOT_MAX_ABS_Y_M
+            and k["outcome"] != "kept" and k["game_state"] not in NOT_SHOT_STATES)

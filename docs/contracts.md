@@ -121,7 +121,7 @@ Common fields: `type`, `frame_index`, `t_s`, `clock_s`, `period`, `team`, `playe
 | `goal` | `scorer_id` (player_id or null if unknown) |
 | `set_piece` | `kind` (same values as `game_state` minus `open_play`) |
 
-**Events are derived from positions only** (ball and player positions, velocities, `game_state`, `score`), never from source-specific signals, so the same detectors run on synthetic and on vision tracking. They do not read `possession`: the ball owner is inferred as the nearest on-pitch player to the ball within 1.25 m while the ball is at most 1.0 m high, and an owner counts only after holding for 3 consecutive tracking lines (defaults `owner_radius_m`, `owner_max_z_m` and `owner_min_frames`, the latter for possession changes only; shots and goals use the last touch, calibrated on synthetic seeds 1 to 5, where the stabilized owner equals the engine `possession` in 89.3% of frames on seeds 1 to 3).
+**Events are derived from positions only** (ball and player positions, velocities, `game_state`, `score`), never from source-specific signals, so the same detectors run on synthetic and on vision tracking. They do not read `possession`: the ball owner is inferred as the nearest on-pitch player to the ball within 1.25 m while the ball is at most 1.0 m high, and an owner counts only after holding for 3 consecutive tracking lines (defaults `owner_radius_m`, `owner_max_z_m` and `owner_min_frames`, the latter for possession changes only; shots and goals use the last touch, calibrated on synthetic seeds 1 to 5, where the stabilized owner equals the engine `possession` in 89.3% of frames on seeds 1 to 3). A `shot` is a kick (ball speed ≥ 18 m/s after a slower row, a jump of ≥ 5 m/s, or a new shooter) toward the opponent goal from 40 m or less, whose straight-line projection crosses the goal line at `|y| ≤ 7.5`, not taken from a `throw_in`, `goal_kick` or `kick_off`, and whose first touch by another player within 30 rows is not a teammate (opponent, goalkeeper, nobody and a goal all count); `interpret` reuses these constants (`shots.is_shot`).
 
 ## Migration from the current package
 
@@ -218,6 +218,7 @@ One possession sequence per line: from the moment a team gains the ball until it
 
 - `start_cause`: `kick_off`, `recovery` (tackle or interception), `set_piece:<kind>`, `loose_ball`.
 - `end_cause`: `goal`, `shot`, `lost` (opponent gains it), `out` (set piece for the opponent), `end_of_period`.
+- A shot by the other team (raw last touch) ends the sequence as `lost` at the last row with the stable owner and starts the shooter's sequence at the shot row. A score for the opponent without a shot is credited to a one-row sequence of the scorer ending `goal` when it has a raw touch in the last 2 s; otherwise it stays an own goal with `end_cause` `out`. The first sequence after a score change starts as `kick_off`. `goal` events map to the sequence that ended in that goal; `set_piece` events map to none.
 
 ## interpret/timeline.jsonl
 
@@ -245,13 +246,13 @@ Fixed windows over **open-play time**. There are 18 windows per match, so one wi
   "shooting": {"shots": 2, "xg": 0.27, "goals": 1, "max_shot_speed_m_s": 31.0},
   "defending": {"tackles": 3, "interceptions": 2, "pressures": 18},
   "rating": {"value": 7.8, "breakdown": [{"item": "lines_broken", "count": 9, "points": 0.9},
-                                         {"item": "goal_minus_xg", "value": 0.73, "points": 0.7}]}
+                                         {"item": "goals_minus_xg", "value": 0.73, "points": 0.7}]}
 }]}
 ```
 
 ## interpret/teams.json
 
-Per team: the same blocks summed or averaged over outfield players, each count with its `_per_min` and `_projected`, plus `possession_pct`, `pressure` (match mean), `xg`, `goals`, `sequences`, `sequences_ending_in_shot`.
+Shape: `{"teams": [{"team": "home", ...}, {"team": "away", ...}]}`. Per team: the same blocks summed or averaged over outfield players, each count with its `_per_min` and `_projected`, plus `possession_pct`, `pressure` (match mean), `xg`, `goals`, `sequences`, `sequences_ending_in_shot`.
 
 ## interpret/quality.json
 
@@ -265,14 +266,36 @@ Per team: the same blocks summed or averaged over outfield players, each count w
 
 `level` (`high`, `medium`, `low`) is what Explain uses to caveat its text ("medium confidence").
 
+### Stats Tools (MCP)
+
+`python -m tacticai.interpret mcp --root <matches dir>` serves read-only tools over stdio (`application/stats_tools.py` holds the queries, `interfaces/mcp_server.py` the MCP wrappers). They filter and aggregate an already written analysis package, never recompute from tracking and never call an LLM. Every tool takes `match_id` (the folder name under the root), every response carries `match_id` and the `until_t_s` used, and errors come back as `{"error": ..., "valid": [...]}`.
+
+Tools: `list_matches`, `match_summary`, `team_stats`, `player_stats`, `top_players` (metric in `lines_broken`, `progressive_passes`, `xg`, `goals`, `tackles`, `interceptions`, `passes`, `completion_pct`, `rating`, `distance_rank`, `top_speed_rank`), `events`, `sequences`, `timeline`, `shot_map`, `pressure_windows`, `quality`.
+
+`until_t_s` semantics: only records with `t_s <= until_t_s` count (sequences: `end_t_s <= until_t_s`, so an open sequence does not leak the future). Score, counts, xG, shots, tackles and interceptions are recomputed from the filtered events; possession and pressure are means of timeline windows weighted by their overlap with `[0, until_t_s]` (approximate inside a window). Full-match only, never cut and flagged `scope: full_match` or listed in `full_match_only`: the `physical` block with its rank and percentile (relative when `physical_absolute` is false), `rating`, `quality`, `projection` and `calibration`.
+
 ## interpret/tactical_notes.jsonl
 
-Output of the Tactical Analyst Agent. Each note cites the windows, sequences or events that support it; a note without evidence is not published.
+Deterministic candidate notes (no LLM) written by `interpret/domain/patterns.py`; Explain and the Tactical Analyst Agent phrase and rank them. Each note cites the windows, sequences or events that support it; a note without evidence is not published. Notes are sorted by `t_s`; same `kind` + `team` overlapping in time keep only the strongest.
 
 ```json
-{"t_s": 180.0, "until_t_s": 230.0, "team": "home", "kind": "phase_change", "text_key": "high_press_from",
- "evidence": {"timeline_windows": [11, 12, 13], "metric": "pressure", "before": 0.38, "after": 0.61}}
+{"t_s": 180.0, "until_t_s": 230.0, "start_clock_s": 2700.0, "period": 1, "team": "home", "kind": "pressure_shift", "text_key": "pressure_up", "strength": 0.42,
+ "evidence": {"timeline_windows": [8, 9, 10, 11, 12, 13], "metric": "pressure", "before": 0.38, "after": 0.59}}
 ```
+
+Common fields: `t_s`/`until_t_s` (video seconds), `start_clock_s`, `period`, `team`, `kind`, `text_key`, `evidence` (never empty), `strength` (0 to 1, ranks notes). Thresholds are constants of the module.
+
+`pressure_shift` (`pressure_up` / `pressure_down`): the team's mean pressure over 3 consecutive windows differs by at least 0.15 from the mean over the 3 before; at most one per team per 3 windows. Evidence: `timeline_windows` (the 6 windows), `metric: "pressure"`, `before`, `after`. Strength: difference / 0.5.
+
+`pressure_peak` (`highest_pressure_of_match`): the window with the team's highest pressure. Evidence: `timeline_windows`, `metric`, `value`, `match_mean`. Strength: (value - mean) / 0.5.
+
+`momentum_swing` (`momentum_to_home` / `momentum_to_away`, team = the one gaining): momentum changes sign between two consecutive windows with a change of at least 0.4 and a new value of at least 0.1 in absolute value, or a 3-window mean flips from at least +0.3 to at most -0.3 (or reverse). Evidence: `timeline_windows`, `metric: "momentum"`, `values` (and `mean_before`, `mean_after` for the 3-window flip). Strength: the change (jump) or half the change of means.
+
+`dominance_spell` (`dominance_spell`): at least 3 consecutive windows with momentum of at least +0.4 (home) or at most -0.4 (away). Evidence: `timeline_windows`, `mean_momentum`, `xg` and `final_third_entries` (each `{home, away}` summed over the spell). Strength: absolute mean momentum.
+
+`line_breaking_sequence` (`line_breaking_move`): sequences with `lines_broken` of at least 2 ending in `shot` or `goal`, plus each team's sequence with the most lines broken (at least 1). Evidence: `sequence_ids`, `lines_broken`, `passes`, `duration_s`, `end_cause`, `xg`. Strength: lines broken / 5.
+
+`big_chance` (`big_chance_scored` / `big_chance_missed`): a shot with `xg` of at least 0.3 (needs the xG model). Evidence: `event_indices` (index into `events_enriched.jsonl`), `frame_index`, `xg`, `player_id`. Strength: `xg`.
 
 ## Analysis definitions
 

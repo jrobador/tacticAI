@@ -30,3 +30,30 @@ def team_pressure(rows, owners, team, t0=None, t1=None):
     v = [pressure_on(r, o[1]) for r, o in zip(rows, owners)
          if o and o[0] == foe and is_open(r) and (t0 is None or r["t_s"] >= t0) and (t1 is None or r["t_s"] < t1)]
     return sum(v) / len(v) if v else None
+
+
+PRESS_MIN_S = 0.5
+
+
+def pressing_events(rows, owners, radius_m=RADIUS_M, min_s=PRESS_MIN_S):
+    """{player_id: n}: continuous stretches (consecutive open-play frames, opponent stable owner, player within radius_m of that owner) lasting >= min_s
+    (last t_s - first t_s + frame step)."""
+    out, cur, step = {}, {}, (rows[1]["t_s"] - rows[0]["t_s"]) if len(rows) > 1 else 0.0
+
+    def end(pid):
+        t0, t1 = cur.pop(pid)
+        out[pid] = out.get(pid, 0) + (t1 - t0 + step >= min_s - 1e-9)
+
+    for i, r in enumerate(rows):
+        o, near = owners[i], set()
+        me = o and is_open(r) and (i == 0 or r["frame_index"] == rows[i - 1]["frame_index"] + 1) and next((p for p in r["players"] if p["player_id"] == o[1]), None)
+        if me:
+            near = {p["player_id"] for p in r["players"] if p["on_pitch"] and team_of(p["player_id"]) == opponent(o[0])
+                    and math.dist((p["x"], p["y"]), (me["x"], me["y"])) < radius_m}
+        for pid in [k for k in cur if k not in near]:
+            end(pid)
+        for pid in near:
+            cur.setdefault(pid, [r["t_s"], r["t_s"]])[1] = r["t_s"]
+    for pid in list(cur):
+        end(pid)
+    return out

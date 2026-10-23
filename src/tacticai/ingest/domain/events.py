@@ -7,9 +7,10 @@ from .clock import FRAME_S
 from .contract import team_of
 
 POST_M = 3.66  # goal post |y| (Laws of the Game)
-DEFAULTS = dict(owner_radius_m=1.25, owner_max_z_m=1.0, tackle_dist_m=2.0, tackle_max_gap=2, shot_min_speed=15.0,
-                shot_goal_margin_m=2.0, shot_max_dist_m=35.0, shot_debounce=10, goal_lookahead=30,
+DEFAULTS = dict(owner_radius_m=1.25, owner_max_z_m=1.0, tackle_dist_m=2.0, tackle_max_gap=2, shot_min_speed=18.0,
+                shot_max_abs_y_m=7.5, shot_max_dist_m=40.0, shot_jump_m_s=5.0, shot_debounce=10, goal_lookahead=30,
                 owner_min_frames=3)
+NOT_SHOT_STATES = ("throw_in", "goal_kick", "kick_off")  # a kick from these restarts is not a shot
 
 
 def infer_owner(f, radius_m, max_z_m):
@@ -61,6 +62,16 @@ def is_pass(rows, owners, s, t):
     return False
 
 
+def teammate_next(raw, rows, i, t, shooter, n):
+    """True if, within n rows after row i, a teammate of team t (not the shooter) touches the ball before the team scores."""
+    for k in range(i + 1, min(i + 1 + n, len(rows))):
+        if rows[k]["score"][t] > rows[i]["score"][t]:
+            return False
+        if raw[k] and raw[k][1] != shooter:
+            return raw[k][0] == t
+    return False
+
+
 def extract(rows, th, length_m=108.8):
     half = length_m / 2
     raw = [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]  # shots, goals: one-touch shooters
@@ -73,9 +84,10 @@ def extract(rows, th, length_m=108.8):
 
     last = None  # (team, player_id, row index of last stabilized-owned row)
     touch = None  # (team, player_id) of the last raw owner before the current row
-    last_shot = {"home": -10**9, "away": -10**9}
+    last_shot, who = {"home": -10**9, "away": -10**9}, {}
     for i, r in enumerate(rows):
         p, b = rows[i - 1] if i else None, r["ball"]
+        pt = touch
         if i and raw[i - 1]:
             touch = raw[i - 1]
         if p and r["score"] != p["score"]:
@@ -90,14 +102,17 @@ def extract(rows, th, length_m=108.8):
             _, pid = min((math.dist((pl["x"], pl["y"]), (q["x"], q["y"])), pl["player_id"])
                          for pl in rows[j]["players"] if pl["on_pitch"])
             add(r, "set_piece", team_of(pid), pid, b["x"], b["y"], kind=m)
-        if p and touch and speed(r) >= th["shot_min_speed"] > speed(p):
-            t = touch[0]
+        if p and touch and speed(r) >= th["shot_min_speed"]:
+            t, v0 = touch[0], speed(p)
             gx = half if t == "home" else -half
-            if b["vx"] * gx > 0 and i - last_shot[t] > th["shot_debounce"]:
+            kick = (v0 < th["shot_min_speed"] or speed(r) - v0 >= th["shot_jump_m_s"]
+                    or touch != pt and touch[1] != who.get(t))  # same trigger as interpret kick_candidates
+            if (kick and b["vx"] * gx > 0 and abs(gx - b["x"]) <= th["shot_max_dist_m"]
+                    and not (i - last_shot[t] < th["shot_debounce"] and touch[1] == who.get(t))):
+                last_shot[t], who[t] = i, touch[1]
                 yg = b["y"] + b["vy"] * (gx - b["x"]) / b["vx"]
-                if (abs(yg) <= POST_M + th["shot_goal_margin_m"] and abs(gx - b["x"]) <= th["shot_max_dist_m"]
-                        and not is_pass(rows, owners, i, t)):
-                    last_shot[t] = i
+                if (abs(yg) <= th["shot_max_abs_y_m"] and r["game_state"] not in NOT_SHOT_STATES
+                        and not teammate_next(raw, rows, i, t, touch[1], th["goal_lookahead"])):
                     goal = any(q["score"][t] > r["score"][t] for q in rows[i + 1:i + 1 + th["goal_lookahead"]])
                     add(r, "shot", t, touch[1], b["x"], b["y"], end_x=round(gx, 2), end_y=round(yg, 2),
                         speed_m_s=round(speed(r), 2), outcome="goal" if goal else "no_goal")

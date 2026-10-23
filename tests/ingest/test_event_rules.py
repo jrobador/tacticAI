@@ -47,8 +47,8 @@ def test_possession_events():
     assert {"type", "frame_index", "t_s", "clock_s", "period", "team", "player_id", "x", "y"} <= p.keys()
 
 
-def shots(ball, v, nxt):  # slow owned row, shot onset row, next owner row
-    return [e for e in extract([fr(0, ("home", 1)), fr(1, ball=ball, v=v), fr(2, nxt, ball=ball, v=v)],
+def shots(ball, v, nxt, state="open_play"):  # slow owned row, shot onset row, next owner row
+    return [e for e in extract([fr(0, ("home", 1)), fr(1, state=state, ball=ball, v=v), fr(2, nxt, ball=ball, v=v)],
                                dict(DEFAULTS, owner_min_frames=1)) if e["type"] == "shot"]
 
 
@@ -60,6 +60,28 @@ def test_real_shot():
 
 def test_strong_pass_to_teammate_is_not_a_shot():
     assert len(shots((32.64, 0), (27.2, 0), ("home", 2))) == 0
+
+
+def test_saved_shot_with_rebound_to_teammate_is_a_shot():
+    rows = [fr(0, ("home", 1)), fr(1, ball=(32.64, 0), v=(27.2, 0)), fr(2, ("away", 0), ball=(40.0, 0), v=(27.2, 0)),
+            fr(3, ("home", 2), ball=(40.0, 0), v=(5.0, 0))]  # GK/opponent touches first, then a teammate
+    ev = extract(rows, dict(DEFAULTS, owner_min_frames=1))
+    assert [e["type"] for e in ev if e["type"] == "shot"] == ["shot"]
+
+
+def test_slow_kick_is_not_a_shot():
+    assert len(shots((32.64, 0), (16.0, 0), ("away", 0))) == 0
+    assert len(shots((32.64, 0), (18.0, 0), ("away", 0))) == 1
+
+
+def test_width_limit_7_5_m():
+    assert len(shots((44.4, 0), (20.0, 14.0), ("away", 0))) == 1  # reaches the line at y = 7.0
+    assert len(shots((44.4, 0), (20.0, 16.0), ("away", 0))) == 0  # y = 8.0
+
+
+def test_restart_states_are_not_shots():
+    assert len(shots((32.64, 0), (27.2, 0), ("away", 0), state="throw_in")) == 0
+    assert len(shots((32.64, 0), (27.2, 0), ("away", 0), state="goal_kick")) == 0
 
 
 def test_cross_wide_of_the_posts_is_not_a_shot():

@@ -41,12 +41,12 @@ def test_goal_end_and_kick_off():
     rows, o = mk([H, H, H, None, None, A, A], scores=sc)
     s, ids = sequences(rows, [{"type": "shot", "team": "home", "frame_index": 1}, {"type": "goal", "team": "home", "frame_index": 3}], o)
     assert (s[0]["end_cause"], s[0]["goal"], s[0]["end_frame"], s[1]["start_cause"]) == ("goal", True, 2, "kick_off")
-    assert ids == [0, None]
+    assert ids == [0, 0]  # the goal maps to the sequence that ended in it
 
 
 def test_frame_gap_splits():
     rows, o = mk([H] * 6, frames=[0, 1, 2, 10, 11, 12])
-    s, ids = sequences(rows, [{"type": "pass", "team": "home", "frame_index": f, "outcome": "complete", "x": 0, "end_x": 1} for f in (1, 5, 11)], o)
+    s, ids = sequences(rows, [{"type": "pass", "team": "home", "player_id": "home-01", "frame_index": f, "outcome": "complete", "x": 0, "end_x": 1} for f in (1, 5, 11)], o)
     assert [(q["start_frame"], q["end_frame"], q["end_cause"], q["start_cause"]) for q in s] == [(0, 2, "out", "kick_off"), (10, 12, "end_of_period", "loose_ball")]
     assert ids == [0, None, 1] and (s[0]["passes"], s[1]["passes"]) == (1, 1)
 
@@ -54,7 +54,17 @@ def test_frame_gap_splits():
 def test_period_change_and_event_ids():
     rows, o = mk([H, H, A, A, A], periods=[1, 1, 1, 2, 2])
     ev = [{"type": "shot", "team": "home", "frame_index": 1, "t_s": 0.1},
-          {"type": "pass", "team": "home", "frame_index": 2, "t_s": 0.2, "outcome": "intercepted", "intercepted_by": "away-01", "x": 0, "end_x": 1}]
+          {"type": "pass", "team": "home", "player_id": "home-01", "frame_index": 2, "t_s": 0.2, "outcome": "intercepted", "intercepted_by": "away-01", "x": 0, "end_x": 1}]
     s, ids = sequences(rows, ev, o)
     assert [(q["team"], q["end_cause"], q["period"]) for q in s] == [("home", "shot", 1), ("away", "end_of_period", 1), ("away", "end_of_period", 2)]
     assert s[2]["start_cause"] == "kick_off" and s[0]["passes"] == 1 and ids == [0, 0]
+
+
+def test_opponent_one_touch_shot_splits_and_goal_maps():
+    z, g = {"home": 0, "away": 0}, {"home": 0, "away": 1}
+    rows, o = mk([H, H, H, H, None, None, None, H, H], frames=[0, 1, 2, 3, 4, 5, 9, 10, 11], scores=[z] * 5 + [g] * 4)
+    ev = [{"type": "shot", "team": "away", "player_id": "away-09", "t_s": 0.3, "frame_index": 3}, {"type": "goal", "team": "away", "t_s": 0.5, "frame_index": 5}]
+    s, ids = sequences(rows, ev, o)
+    assert [(q["team"], q["start_frame"], q["end_frame"], q["end_cause"], q["start_cause"]) for q in s] == [
+        ("home", 0, 2, "lost", "kick_off"), ("away", 3, 4, "goal", "loose_ball"), ("home", 10, 11, "end_of_period", "kick_off")]
+    assert s[1]["goal"] and s[1]["players"] == ["away-09"] and ids == [1, 1]

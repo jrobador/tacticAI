@@ -113,3 +113,12 @@ def test_field_dictionary_matches_rows():
     [c] = run(kick([]))
     assert [n for n, _, _ in FIELDS if n not in ("job_seed", "job_kind")] == list(c)
     assert make_recipe("situation", 50000).situation.template and make_recipe("full_match", 1000).mode == "full_match"
+
+
+def test_pass_field_dictionary_matches_rows():
+    from tacticai.interpret.application.build_shot_dataset import PASS_FIELDS
+    from tacticai.interpret.domain.passes import pass_features
+    row = {"frame_index": 0, "t_s": 0, "game_state": "open_play", "score": {"home": 0, "away": 0}, "players": []}
+    e = {"type": "pass", "frame_index": 0, "t_s": 0, "team": "home", "player_id": "home-01", "x": 0, "y": 0, "end_x": 1, "end_y": 0, "outcome": "complete"}
+    [f] = pass_features([row], [None], [e], {0: 0}, {"match_id": "m", "pitch": {"length_m": 108.8}})
+    assert [n for n, _, _ in PASS_FIELDS] == list(f)

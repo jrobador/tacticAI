@@ -37,7 +37,7 @@ def pass_features(rows, owners, events, idx, meta):
     for e in events:
         if e["type"] != "pass":
             continue
-        r, t = rows[(k := release_index(rows, owners, e, idx))], e["team"]
+        r, t = rows[release_index(rows, owners, e, idx)], e["team"]
         a, b = (e["x"], e["y"]), (e["end_x"], e["end_y"])
         foes = [(p["x"], p["y"]) for p in r["players"] if p["on_pitch"] and p["player_id"].startswith(opponent(t))]
         me = next((p for p in r["players"] if p["player_id"] == e["player_id"]), None)
