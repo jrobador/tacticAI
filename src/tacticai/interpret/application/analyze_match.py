@@ -2,7 +2,7 @@
 xg_model / xpass_model: optional callables f(feature_dict) -> probability (shot kick-candidate features / pass_features); None leaves the dependent fields null."""
 import os
 
-from ...ingest.domain.events import DEFAULTS
+from ...ingest.domain.events import DEFAULTS, infer_owner
 from ...ingest.infrastructure.files import read_json, read_jsonl, write_json, write_jsonl
 from ..domain import physical
 from ..domain.frame import opponent, release_index, third, x_att
@@ -28,14 +28,14 @@ def _model_info(m):
     return None if m is None else getattr(m, "info", {"id": getattr(m, "__name__", "custom")})
 
 
-def _enrich(rows, owners, events, meta, roster, th, xg_model, xpass_model):
+def _enrich(rows, owners, raw, events, meta, roster, th, xg_model, xpass_model):
     """-> (enriched events, sequences, {event index: xg})."""
     idx = {r["frame_index"]: i for i, r in enumerate(rows)}
     length = meta["pitch"]["length_m"]
-    seqs, seq_ids = sequences(rows, events, owners)
+    seqs, seq_ids = sequences(rows, events, owners, raw)
     ps = pass_stats(events, rows)["passes"]
     feats = iter(pass_features(rows, owners, events, idx, meta) if xpass_model else [])
-    cands = kick_candidates(rows, roster, meta, th, events)
+    cands = kick_candidates(rows, roster, meta, th, events, raw)
     shot_speeds = iter(physical.ball_speeds(rows, events, meta)["shots"])
     pstats, out, xgs = iter(ps), [], {}
     for j, (e, sid) in enumerate(zip(events, seq_ids)):
@@ -132,8 +132,9 @@ def analyze(match_dir, xg_model=None, xpass_model=None):
     meta, roster, rows, events = read_json(read("meta.json")), read_json(read("roster.json")), read_jsonl(read("tracking.jsonl")), read_jsonl(read("events.jsonl"))
     meta = {**meta, "projection": meta.get("projection", physical.DEFAULT_PROJECTION), "calibration": meta.get("calibration", {"physical_absolute": False})}
     meta.setdefault("source", {}).setdefault("camera_setup", "synthetic")
-    owners = owners_for(rows)
-    enriched, seqs, xgs = _enrich(rows, owners, events, meta, roster, DEFAULTS, xg_model, xpass_model)
+    raw = [infer_owner(r, DEFAULTS["owner_radius_m"], DEFAULTS["owner_max_z_m"]) for r in rows]
+    owners = owners_for(rows, raw=raw)
+    enriched, seqs, xgs = _enrich(rows, owners, raw, events, meta, roster, DEFAULTS, xg_model, xpass_model)
     players, thr = _players(rows, owners, events, enriched, roster, meta, xg_model is not None)
     teams = _teams(rows, owners, enriched, players, seqs, meta, xg_model is not None)
     for p in players:

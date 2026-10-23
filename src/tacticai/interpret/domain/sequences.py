@@ -19,13 +19,13 @@ def _recovery(events, team, t):
                for e in events)
 
 
-def _touched(rows, i, team):
-    """True if `team` has a raw touch (infer_owner) within TOUCH_S up to row i."""
-    return any((o := infer_owner(r, DEFAULTS["owner_radius_m"], DEFAULTS["owner_max_z_m"])) and o[0] == team
-               for r in rows[:i + 1] if r["t_s"] >= rows[i]["t_s"] - TOUCH_S)
+def _touched(rows, raw, i, team):
+    """True if `team` has a raw touch (infer_owner; raw = precomputed per row, None computes it) within TOUCH_S up to row i."""
+    return any((o := raw[k] if raw else infer_owner(rows[k], DEFAULTS["owner_radius_m"], DEFAULTS["owner_max_z_m"])) and o[0] == team
+               for k in range(i + 1) if rows[k]["t_s"] >= rows[i]["t_s"] - TOUCH_S)
 
 
-def _spans(rows, events, owners):
+def _spans(rows, events, owners, raw):
     """[{team, i0, i1, players, start_cause, why, after, goal, at}] with why in lost | stop | score | period | eod (rows i0..i1 inclusive); goal: the score rose for the span's team
     at row `at`. A shot by the other team splits the sequence (the shooter's one starts at the shot row); a score for the opponent with a raw touch in the last TOUCH_S
     is credited to a one-row sequence of the scorer (own goals without a touch keep the old sequence, end `out`)."""
@@ -46,7 +46,7 @@ def _spans(rows, events, owners):
                    else "stop" if r["frame_index"] - p["frame_index"] > 1 or is_break(p, r) else None)
             if why:
                 t = opponent(cur["team"]) if cur else None
-                if cur and why == "score" and r["score"][t] > p["score"][t] and _touched(rows, i, t):  # ponytail: touch by position only
+                if cur and why == "score" and r["score"][t] > p["score"][t] and _touched(rows, raw, i, t):  # ponytail: touch by position only
                     close("lost")
                     out.append({"team": t, "i0": i, "i1": i, "players": [], "start_cause": "loose_ball", "why": "score", "after": r["score"], "at": r["frame_index"], "goal": True})
                     pending = None
@@ -84,10 +84,10 @@ def _spans(rows, events, owners):
     return out
 
 
-def sequences(rows, events, owners):
+def sequences(rows, events, owners, raw=None):
     """-> (sequences, event_sequence_ids). Sequence fields as in the contract; xg is None until shots are scored. event_sequence_ids is aligned with events:
     the sequence whose [start_frame, end_frame] holds the event frame, or None; an intercepted pass goes to the passer's sequence (its frame opens the interceptor's)."""
-    spans = _spans(rows, events, owners)
+    spans = _spans(rows, events, owners, raw)
     starts = [rows[s["i0"]]["frame_index"] for s in spans]
     ends = [rows[s["i1"]]["frame_index"] for s in spans]
 

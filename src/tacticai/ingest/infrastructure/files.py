@@ -2,20 +2,20 @@ import json
 
 
 def read_json(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def read_jsonl(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return [json.loads(l) for l in f if l.strip()]
 
 
 def write_jsonl(path, rows):
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.writelines(json.dumps(r) + "\n" for r in rows)
 
 
 def write_json(path, obj):
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2)

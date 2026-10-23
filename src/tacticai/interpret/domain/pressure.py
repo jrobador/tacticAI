@@ -19,9 +19,9 @@ def pressure_on(row, player_id):
                         if p["on_pitch"] and team_of(p["player_id"]) == foe and (d := math.dist((p["x"], p["y"]), (me["x"], me["y"]))) < RADIUS_M))
 
 
-def owners_for(rows, th=DEFAULTS):
-    """Stable owners aligned with rows: (team, player_id) or None. Same construction as ingest/domain/events.extract."""
-    return stable_owners([infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows], th["owner_min_frames"])
+def owners_for(rows, th=DEFAULTS, raw=None):
+    """Stable owners aligned with rows: (team, player_id) or None. Same construction as ingest/domain/events.extract; raw: precomputed infer_owner per row."""
+    return stable_owners(raw or [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows], th["owner_min_frames"])
 
 
 def team_pressure(rows, owners, team, t0=None, t1=None):

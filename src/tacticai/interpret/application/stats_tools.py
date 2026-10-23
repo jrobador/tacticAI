@@ -3,25 +3,15 @@
 until_t_s: only records with t_s <= until_t_s count (sequences: end_t_s <= until_t_s, so a sequence still open at that time is not leaked). Aggregates are recomputed from
 the filtered events/sequences/timeline. Timeline windows are weighted by their overlap with [0, until_t_s]. FULL-MATCH ONLY (never cut): physical block, rank/percentile,
 rating, quality, projection/calibration flags. Every response carries match_id and the until_t_s used; errors are {"error": ..., "valid": [...]}."""
-import json
 import os
 
+from ...ingest.infrastructure.files import read_json, read_jsonl
 from ..domain.passes import PROGRESSIVE_M
 
 FILES = ("meta.json", "events_enriched.jsonl", "sequences.jsonl", "timeline.jsonl", "players.json", "teams.json", "quality.json")
 METRICS = ("lines_broken", "progressive_passes", "xg", "goals", "tackles", "interceptions", "passes", "completion_pct", "rating", "distance_rank", "top_speed_rank")
 FULL_ONLY = ["physical", "rating", "quality", "projection", "calibration"]
 _cache = {}
-
-
-def _jl(p):
-    with open(p, encoding="utf-8") as f:
-        return [json.loads(l) for l in f if l.strip()]
-
-
-def _read(p):
-    with open(p, encoding="utf-8") as f:
-        return json.load(f)
 
 
 def _round(v, n):
@@ -42,9 +32,9 @@ def _load(root, match_id):
     hit = _cache.get(d)
     if hit and hit[0] == key:
         return hit[1]
-    opt = lambda name, dflt: _read(os.path.join(d, name)) if os.path.exists(os.path.join(d, name)) else dflt
-    pkg = {"id": match_id, "meta": _read(i("meta.json")), "events": _jl(i("events_enriched.jsonl")), "sequences": _jl(i("sequences.jsonl")),
-           "timeline": _jl(i("timeline.jsonl")), "players": _read(i("players.json"))["players"], "quality": _read(i("quality.json")),
+    opt = lambda name, dflt: read_json(os.path.join(d, name)) if os.path.exists(os.path.join(d, name)) else dflt
+    pkg = {"id": match_id, "meta": read_json(i("meta.json")), "events": read_jsonl(i("events_enriched.jsonl")), "sequences": read_jsonl(i("sequences.jsonl")),
+           "timeline": read_jsonl(i("timeline.jsonl")), "players": read_json(i("players.json"))["players"], "quality": read_json(i("quality.json")),
            "match": opt("meta.json", {}), "roster": {p["player_id"]: p for p in opt("roster.json", {"players": []})["players"]}}
     _cache[d] = (key, pkg)
     return pkg

@@ -72,6 +72,19 @@ def teammate_next(raw, rows, i, t, shooter, n):
     return False
 
 
+def kick_at(rows, i, touch, prev, last, who, half, min_speed, th):
+    """Shared shot/kick trigger at row i (speed >= min_speed already checked) by `touch` (new vs `prev`): -> x of the goal kicked at, or None.
+    Updates the per-team debounce state last/who on a hit."""
+    r, t = rows[i], touch[0]
+    v0, b, gx = speed(rows[i - 1]), r["ball"], half if t == "home" else -half
+    if not (v0 < min_speed or speed(r) - v0 >= th["shot_jump_m_s"] or touch != prev and touch[1] != who.get(t)):
+        return None
+    if b["vx"] * gx <= 0 or abs(gx - b["x"]) > th["shot_max_dist_m"] or i - last[t] < th["shot_debounce"] and touch[1] == who.get(t):
+        return None
+    last[t], who[t] = i, touch[1]
+    return gx
+
+
 def extract(rows, th, length_m=108.8):
     half = length_m / 2
     raw = [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]  # shots, goals: one-touch shooters
@@ -103,13 +116,8 @@ def extract(rows, th, length_m=108.8):
                          for pl in rows[j]["players"] if pl["on_pitch"])
             add(r, "set_piece", team_of(pid), pid, b["x"], b["y"], kind=m)
         if p and touch and speed(r) >= th["shot_min_speed"]:
-            t, v0 = touch[0], speed(p)
-            gx = half if t == "home" else -half
-            kick = (v0 < th["shot_min_speed"] or speed(r) - v0 >= th["shot_jump_m_s"]
-                    or touch != pt and touch[1] != who.get(t))  # same trigger as interpret kick_candidates
-            if (kick and b["vx"] * gx > 0 and abs(gx - b["x"]) <= th["shot_max_dist_m"]
-                    and not (i - last_shot[t] < th["shot_debounce"] and touch[1] == who.get(t))):
-                last_shot[t], who[t] = i, touch[1]
+            t = touch[0]
+            if (gx := kick_at(rows, i, touch, pt, last_shot, who, half, th["shot_min_speed"], th)) is not None:
                 yg = b["y"] + b["vy"] * (gx - b["x"]) / b["vx"]
                 if (abs(yg) <= th["shot_max_abs_y_m"] and r["game_state"] not in NOT_SHOT_STATES
                         and not teammate_next(raw, rows, i, t, touch[1], th["goal_lookahead"])):

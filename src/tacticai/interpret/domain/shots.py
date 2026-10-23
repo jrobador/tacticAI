@@ -2,9 +2,9 @@
 Owners follow the ingest rules (infer_owner raw touch, stable_owners for is_pass); the labels never read ingest events."""
 import math
 
-from ...ingest.domain.events import DEFAULTS, NOT_SHOT_STATES, POST_M, infer_owner, is_pass, speed, stable_owners
+from ...ingest.domain.events import DEFAULTS, NOT_SHOT_STATES, POST_M, infer_owner, is_pass, kick_at, speed, stable_owners
 
-MIN_SPEED, JUMP_M_S, MAX_DIST_M, DEBOUNCE, LOOKAHEAD_S, HALF_G = 10.0, 5.0, 40.0, 10, 3.0, 4.905
+MIN_SPEED, LOOKAHEAD_S, HALF_G = 10.0, 3.0, 4.905
 BOX_DEPTH_M, BOX_HALF_W_M, CROSSBAR_M = 16.5, 20.16, 2.44
 
 
@@ -62,11 +62,11 @@ def outcome_of(rows, raw, i, team, shooter, dist_line, pitch):
     return ("blocked" if math.dist((b0["x"], b0["y"]), (b1["x"], b1["y"])) < 0.5 * dist_line else "other"), nxt, seq
 
 
-def kick_candidates(rows, roster, meta, th, events=None):
-    """Every strike toward the opponent goal (see module doc) -> list of flat dicts; events (ingest) only feeds detected_as_shot_by_ingest."""
+def kick_candidates(rows, roster, meta, th, events=None, raw=None):
+    """Every strike toward the opponent goal (see module doc) -> list of flat dicts; events (ingest) only feeds detected_as_shot_by_ingest; raw: precomputed infer_owner per row."""
     half, pitch = meta["pitch"]["length_m"] / 2, (meta["pitch"]["length_m"] / 2, meta["pitch"]["width_m"] / 2)
     info = {p["player_id"]: p for p in roster["players"]}
-    raw = [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]
+    raw = raw or [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]
     owners = stable_owners(raw, th["owner_min_frames"])
     shots = [(e["team"], e["frame_index"]) for e in events or [] if e["type"] == "shot"]
     last, who, touch, change_t, res = {"home": -10**9, "away": -10**9}, {}, None, rows[0]["t_s"] if rows else 0, []
@@ -78,14 +78,9 @@ def kick_candidates(rows, roster, meta, th, events=None):
             touch = raw[i - 1]
         if not (i and touch and speed(r) >= MIN_SPEED):
             continue
-        v0, team = speed(rows[i - 1]), touch[0]
-        if not (v0 < MIN_SPEED or speed(r) - v0 >= JUMP_M_S or touch != prev and touch[1] != who.get(team)):
+        if (gx := kick_at(rows, i, touch, prev, last, who, half, MIN_SPEED, th)) is None:
             continue
-        b = r["ball"]
-        gx = half if team == "home" else -half
-        if b["vx"] * gx <= 0 or abs(gx - b["x"]) > MAX_DIST_M or i - last[team] < DEBOUNCE and touch[1] == who.get(team):
-            continue
-        last[team], who[team] = i, touch[1]
+        team, b = touch[0], r["ball"]
         x, y, z, opp = b["x"], b["y"], b["z"], "away" if team == "home" else "home"
         dline, t = abs(gx - x), (gx - x) / b["vx"]
         py, pz = y + b["vy"] * t, z + b["vz"] * t - HALF_G * t * t

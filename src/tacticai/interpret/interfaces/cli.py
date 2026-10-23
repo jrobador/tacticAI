@@ -4,7 +4,7 @@ import os
 
 from ..application.analyze_match import analyze
 from ..application.build_shot_dataset import build
-from ..application.train_models import load_xg, load_xpass, train, train_xpass
+from ..application.train_models import load_xg, train, train_xpass
 
 XG_DEFAULT = "src/tacticai/interpret/models/xg_v1.json"
 XPASS_DEFAULT = "src/tacticai/interpret/models/xpass_v1.json"
@@ -33,7 +33,7 @@ def main():
     a = ap.parse_args()
     if a.cmd == "analyze":
         return print(analyze(a.match_dir, xg_model=load_xg(a.xg) if os.path.exists(a.xg) else None,
-                             xpass_model=load_xpass(a.xpass) if os.path.exists(a.xpass) else None))
+                             xpass_model=load_xg(a.xpass) if os.path.exists(a.xpass) else None))
     if a.cmd == "mcp":
         from .mcp_server import run
         return run(a.root)
