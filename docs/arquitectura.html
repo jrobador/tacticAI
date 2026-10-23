@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tacticAI · Ingest e Interpret</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+/* Layout: una columna de lectura; cada etapa con su color (Ingest verde césped, Interpret azul tiza), contratos en ámbar */
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --fg: #1d2420;
+  --muted: #5b665f;
+  --line: #d9ded8;
+  --ingest: #2f7a4b;
+  --ingest-soft: #e3f0e7;
+  --interpret: #2d5d9a;
+  --interpret-soft: #e2ebf6;
+  --contract: #a8690f;
+  --contract-soft: #f7ecd9;
+  --todo: #9a3b3b;
+  --todo-soft: #f5e3e3;
+  --code-bg: #eef0ec;
+  --display: "Fraunces", Georgia, serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141816; --surface: #1c211e; --fg: #e4e9e5; --muted: #9aa69e; --line: #2f3632;
+  --ingest: #6cc28c; --ingest-soft: #1f3327; --interpret: #7fa9e0; --interpret-soft: #1e2a3b;
+  --contract: #e0a64a; --contract-soft: #3a2e1a; --todo: #e08a8a; --todo-soft: #3a2222; --code-bg: #232925;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #141816; --surface: #1c211e; --fg: #e4e9e5; --muted: #9aa69e; --line: #2f3632;
+  --ingest: #6cc28c; --ingest-soft: #1f3327; --interpret: #7fa9e0; --interpret-soft: #1e2a3b;
+  --contract: #e0a64a; --contract-soft: #3a2e1a; --todo: #e08a8a; --todo-soft: #3a2222; --code-bg: #232925;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; }
+h1 { font-family: var(--display); font-size: 2.4rem; margin: 0 0 8px; }
+h2 { font-family: var(--display); font-size: 1.6rem; margin: 56px 0 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+h3 { font-size: 1.05rem; margin: 28px 0 8px; }
+p, li { max-width: 70ch; }
+.lead { font-size: 1.1rem; color: var(--muted); max-width: 65ch; }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 6px; overflow-x: auto; font: 13px/1.5 var(--mono); }
+pre code { background: none; padding: 0; }
+a { color: var(--interpret); }
+
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 20px 0 0; font-size: .92rem; }
+nav.toc a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--fg); }
+
+.tag { display: inline-block; font: 500 .72rem/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; vertical-align: middle; }
+.t-ingest { background: var(--ingest-soft); color: var(--ingest); }
+.t-interpret { background: var(--interpret-soft); color: var(--interpret); }
+.t-contract { background: var(--contract-soft); color: var(--contract); }
+.t-todo { background: var(--todo-soft); color: var(--todo); }
+
+/* Flujo */
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr; align-items: stretch; gap: 8px; margin: 28px 0 8px; overflow-x: auto; }
+.node { border: 1.5px solid var(--line); background: var(--surface); border-radius: 6px; padding: 10px 12px; min-width: 0; font-size: .85rem; }
+.node b { display: block; font-size: .95rem; margin-bottom: 2px; }
+.node.ingest { border-color: var(--ingest); }
+.node.interpret { border-color: var(--interpret); }
+.node.contract { border-color: var(--contract); border-style: dashed; background: var(--contract-soft); }
+.node.future { border-style: dotted; color: var(--muted); }
+.arrow { align-self: center; color: var(--muted); font-family: var(--mono); }
+@media (max-width: 760px) {
+  .flow { grid-template-columns: 1fr; }
+  .arrow { transform: rotate(90deg); justify-self: center; }
+}
+
+.table-wrap { overflow-x: auto; margin: 12px 0; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+td:first-child { white-space: nowrap; }
+
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 16px 0; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.box h4 { margin: 0 0 6px; font-size: .95rem; }
+.box p, .box ul { margin: 6px 0; font-size: .92rem; }
+.box ul { padding-left: 18px; }
+.box.ingest { border-top: 3px solid var(--ingest); }
+.box.interpret { border-top: 3px solid var(--interpret); }
+.box.contract { border-top: 3px solid var(--contract); }
+.box.todo { border-top: 3px solid var(--todo); }
+
+.note { border-left: 3px solid var(--contract); padding: 6px 14px; background: var(--contract-soft); border-radius: 0 6px 6px 0; margin: 16px 0; max-width: 75ch; }
+.note.todo { border-color: var(--todo); background: var(--todo-soft); }
+footer { margin-top: 64px; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Cómo se conectan Ingest e Interpret</h1>
+  <p class="lead">Qué entra y qué sale de cada etapa, qué archivos pasan de una a la otra, quién los escribe, quién los lee y dónde vive el código. Estado al 23/10/2026.</p>
+  <nav class="toc" aria-label="Secciones">
+    <a href="#flujo">El flujo</a>
+    <a href="#quien">Quién escribe y quién lee</a>
+    <a href="#contrato1">Contrato 1: partido</a>
+    <a href="#ingest">Ingest</a>
+    <a href="#contrato2">Contrato 2: análisis</a>
+    <a href="#interpret">Interpret</a>
+    <a href="#mcp">Cómo se consulta</a>
+    <a href="#codigo">Dependencias de código</a>
+    <a href="#runtime">Dónde corre cada cosa</a>
+    <a href="#propuesta">Propuesta de conexión</a>
+    <a href="#abierto">Lo que falta</a>
+  </nav>
+</header>
+
+<section id="flujo">
+  <h2>El flujo</h2>
+  <p>Las etapas no se llaman entre sí: se pasan <strong>carpetas con archivos</strong>. Ingest fabrica el partido y lo deja escrito en un formato fijo (el contrato). Interpret lee esa carpeta y escribe sus resultados en una subcarpeta. Las etapas que vienen después van a leer las dos.</p>
+
+  <div class="flow" role="img" aria-label="Receta, Ingest, paquete del partido, Interpret, paquete de análisis">
+    <div class="node"><b>Receta</b>"un contraataque de Wexmoor que termine en gol"</div>
+    <div class="arrow">→</div>
+    <div class="node ingest"><b>Ingest</b>simula, elige la semilla, graba</div>
+    <div class="arrow">→</div>
+    <div class="node contract"><b>&lt;partido&gt;/</b>meta · roster · tracking · events · video</div>
+    <div class="arrow">→</div>
+    <div class="node interpret"><b>Interpret</b>calcula métricas y modelos</div>
+    <div class="arrow">→</div>
+    <div class="node contract"><b>&lt;partido&gt;/interpret/</b>8 archivos de análisis</div>
+  </div>
+  <p style="font-size:.9rem;color:var(--muted)">Después: Stats Tools por MCP → agentes (Foundry) → Explain, Render, Personalize. Esas etapas todavía no existen.</p>
+
+  <p>La regla que importa: <strong>todo lo que depende de la fuente queda adentro de Ingest</strong>. Hoy la fuente es nuestro simulador; en producción sería video real. Si mañana cambia la fuente, solo cambia Ingest, porque el resto solo conoce el contrato.</p>
+</section>
+
+<section id="quien">
+  <h2>Quién escribe y quién lee</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Archivo</th><th>Lo escribe</th><th>Lo lee</th><th>Qué tiene</th></tr></thead>
+    <tbody>
+      <tr><td><code>recipe.json</code></td><td>Usuario o Scenario Agent</td><td>Ingest</td><td>Qué partido o jugada se quiere</td></tr>
+      <tr><td><code>meta.json</code></td><td><span class="tag t-ingest">Ingest</span></td><td><span class="tag t-interpret">Interpret</span></td><td>Equipos, tamaño de cancha, fps, formaciones, proyección, calibración</td></tr>
+      <tr><td><code>roster.json</code></td><td><span class="tag t-ingest">Ingest</span></td><td><span class="tag t-interpret">Interpret</span></td><td>Jugadores: id, equipo, nombre, dorsal, puesto</td></tr>
+      <tr><td><code>tracking.jsonl</code></td><td><span class="tag t-ingest">Ingest</span></td><td><span class="tag t-interpret">Interpret</span></td><td>Una línea por instante: posición de los 22 y la pelota, posesión, estado, marcador</td></tr>
+      <tr><td><code>events.jsonl</code></td><td><span class="tag t-ingest">Ingest</span></td><td><span class="tag t-interpret">Interpret</span></td><td>Pases, quites, tiros, goles, balones parados</td></tr>
+      <tr><td><code>video.mp4</code></td><td><span class="tag t-ingest">Ingest</span></td><td>Render (futuro)</td><td>El video, alineado frame a frame con el tracking</td></tr>
+      <tr><td><code>search_report.json</code></td><td><span class="tag t-ingest">Ingest</span></td><td>Nadie</td><td>Solo del sintético; las otras etapas lo ignoran</td></tr>
+      <tr><td><code>interpret/*</code></td><td><span class="tag t-interpret">Interpret</span></td><td>Stats Tools, Explain, Render, Personalize</td><td>Los 8 archivos de análisis (ver Contrato 2)</td></tr>
+      <tr><td><code>models/xg_v1.json</code><br><code>models/xpass_v1.json</code></td><td><span class="tag t-interpret">Interpret</span> (entrenamiento, una vez)</td><td><span class="tag t-interpret">Interpret</span> (<code>analyze</code>)</td><td>Los coeficientes de los dos modelos</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Interpret <strong>no usa el video</strong>. Todo lo calcula con las posiciones.</p>
+</section>
+
+<section id="contrato1">
+  <h2><span class="tag t-contract">Contrato 1</span> El paquete del partido</h2>
+  <p>Definido en <code>docs/contracts.md</code>, sección 1. Cualquier fuente (simulador, cámara del club, transmisión) tiene que producir exactamente esto.</p>
+<pre><code>&lt;match_id&gt;/
+  meta.json       datos generales del partido
+  roster.json     jugadores
+  tracking.jsonl  una línea por frame
+  events.jsonl    eventos derivados del tracking
+  video.mp4       video, alineado por frame_index</code></pre>
+
+  <h3>Cómo leer una línea de tracking</h3>
+<pre><code>{"frame_index": 659, "t_s": 65.9, "clock_s": 1189.6, "period": 1, "camera": "main",
+ "ball": {"x": 12.31, "y": -4.02, "z": 0.11, "vx": 6.2, "vy": -1.1, "vz": 0.0, "observed": true, "confidence": 0.93},
+ "players": [{"player_id": "home-00", "x": -51.2, "y": 0.4, "vx": 0.1, "vy": 0.0, "role": "GK", "on_pitch": true, ...}],
+ "possession": {"team": "home", "player_id": "home-07"},
+ "game_state": "open_play", "score": {"home": 0, "away": 0}, "cards": {"yellow": [], "red": []}}</code></pre>
+
+  <div class="cols">
+    <div class="box contract"><h4>Coordenadas</h4><p>Metros, con origen en el centro de la cancha. El local siempre ataca hacia <code>+x</code>, en los dos tiempos. <code>+y</code> es la banda derecha vista desde el local. El tamaño de la cancha viene en <code>meta.pitch</code>, porque cada estadio mide distinto.</p></div>
+    <div class="box contract"><h4>Dos relojes</h4><p><code>t_s</code> es el tiempo del video y se usa para velocidades y sincronía. <code>clock_s</code> y <code>period</code> son lo que muestra el marcador. En el sintético, <code>clock_s</code> corre unas 18 veces más rápido que <code>t_s</code>.</p></div>
+    <div class="box contract"><h4>Calidad</h4><p><code>camera</code>, <code>observed</code> y <code>confidence</code> dicen qué se vio y qué se estimó. El sintético lo llena todo en 1, porque ve todo.</p></div>
+    <div class="box contract"><h4>Huecos</h4><p>En v1 el sintético escribe solo los frames con pelota en juego. Por eso hay que usar <code>frame_index</code> o <code>t_s</code> y no suponer que dos líneas seguidas son frames seguidos.</p></div>
+  </div>
+
+  <h3>Eventos</h3>
+  <p>Campos comunes: <code>type</code>, <code>frame_index</code>, <code>t_s</code>, <code>clock_s</code>, <code>period</code>, <code>team</code>, <code>player_id</code>, <code>x</code>, <code>y</code>. Cada tipo agrega lo suyo. Por ejemplo, un pase trae a quién fue y si llegó, y un tiro trae su velocidad y si fue gol.</p>
+</section>
+
+<section id="ingest">
+  <h2><span class="tag t-ingest">Etapa 1</span> Ingest: fabrica el partido</h2>
+  <p>Le pedís algo como "un contraataque de Wexmoor que termine en gol". Ingest le dice al simulador cómo tiene que jugar cada equipo, lo hace jugar muchas veces sin video hasta que sale lo pedido, graba ese partido y lo escribe en el formato del contrato.</p>
+
+  <div class="cols">
+    <div class="box ingest"><h4>Entra</h4><p>Una <strong>receta</strong>: formación, estilo y nivel de cada equipo, y opcionalmente una jugada de arranque, cuándo cortar y qué se busca (<code>ends_in_goal</code>, <code>more_pressure:home</code>…).</p></div>
+    <div class="box ingest"><h4>Sale</h4><p>La carpeta <code>&lt;partido&gt;/</code> con los cinco archivos del Contrato 1.</p></div>
+    <div class="box ingest"><h4>Comandos</h4><p><code>generate</code>, <code>search</code>, <code>segment</code>, <code>events</code>, <code>measure</code><br><span class="mono" style="color:var(--muted)">python -m tacticai.ingest …</span></p></div>
+  </div>
+
+  <h3>Cómo está armado el código</h3>
+  <p><code>src/tacticai/ingest/</code>, unas 1.300 líneas. Las carpetas de adentro no conocen a las de afuera.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Carpeta</th><th>Qué hace</th><th>Archivos</th></tr></thead>
+    <tbody>
+      <tr><td><code>domain/</code></td><td>Reglas y definiciones. No toca nada externo, así que se prueba sin simulador.</td><td><code>recipe</code>, <code>formations</code>, <code>styles</code>, <code>situations</code>, <code>contract</code>, <code>pitch</code>, <code>clock</code>, <code>roster</code>, <code>events</code>, <code>metrics</code>, <code>evaluate</code></td></tr>
+      <tr><td><code>infrastructure/</code></td><td>Lo único que habla con el mundo de afuera: simulador, ffmpeg, disco.</td><td><code>engine_adapter</code>, <code>video_writer</code>, <code>watchdog</code>, <code>files</code></td></tr>
+      <tr><td><code>application/</code></td><td>Arma los pasos usando las otras dos.</td><td><code>recipe_config</code>, <code>generate_match</code>, <code>search</code>, <code>infer_events</code>, <code>measure_presets</code></td></tr>
+      <tr><td><code>interfaces/</code></td><td>La puerta de entrada: el CLI.</td><td><code>cli</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Ejemplo, <code>search</code>:</strong> el CLI llama a <code>search.py</code> → <code>recipe_config.py</code> arma la configuración → <code>engine_adapter.py</code> corre cada semilla sin video → <code>events.py</code> saca los eventos → <code>evaluate.py</code> decide cuál cumple → <code>generate_match.py</code> graba la ganadora.</p>
+  <p><strong>Cómo saca los eventos:</strong> solo con posiciones. El dueño de la pelota es el jugador más cercano, a 1,25 m o menos y con la pelota a 1 m de altura o menos, durante al menos 3 frames seguidos. Cuando el dueño cambia de equipo hay un quite o una intercepción; cuando cambia dentro del mismo equipo, un pase. Un tiro es un remate a 18 m/s o más que va hacia el arco. Así los mismos detectores sirven con tracking de video.</p>
+</section>
+
+<section id="contrato2">
+  <h2><span class="tag t-contract">Contrato 2</span> El paquete de análisis</h2>
+  <p>Definido en <code>docs/contracts.md</code>, sección 2. Interpret lo escribe al lado del partido. Las etapas siguientes leen este paquete y el del partido, nunca el código de Interpret.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Archivo</th><th>Qué tiene</th></tr></thead>
+    <tbody>
+      <tr><td><code>meta.json</code></td><td>Versiones, modelos usados, umbrales y segundos de juego efectivo</td></tr>
+      <tr><td><code>events_enriched.jsonl</code></td><td>Los mismos eventos de Ingest con datos agregados: presión, marcador previo, jugada a la que pertenecen; en pases, largo, avance, líneas rotas, xPass y dificultad; en tiros, xG, distancia y ángulo</td></tr>
+      <tr><td><code>sequences.jsonl</code></td><td>Cada jugada, de la recuperación a la pérdida: cómo empezó, cómo terminó, pases, avance, líneas rotas, xG</td></tr>
+      <tr><td><code>timeline.jsonl</code></td><td>18 tramos del partido (~5' reales cada uno): posesión, presión, xG, llegadas al último tercio y momentum de −1 a +1</td></tr>
+      <tr><td><code>players.json</code></td><td>Por jugador: física, pases, tiros, defensa y la nota del 1 al 10 con su desglose</td></tr>
+      <tr><td><code>teams.json</code></td><td>Lo mismo sumado por equipo, con tasas por minuto y totales proyectados a 90'</td></tr>
+      <tr><td><code>quality.json</code></td><td>Qué tan confiable es el tracking: <code>high</code>, <code>medium</code> o <code>low</code></td></tr>
+      <tr><td><code>tactical_notes.jsonl</code></td><td>Momentos candidatos a contar, cada uno con su evidencia: cambio y pico de presión, giro de momentum, racha de dominio, jugada que rompe líneas, chance clara</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="cols">
+    <div class="box contract"><h4>Todo tiene <code>t_s</code></h4><p>Cada registro dice cuándo pasó, para poder preguntar "hasta el minuto 60" sin ver el futuro.</p></div>
+    <div class="box contract"><h4>Tasas primero</h4><p>Las métricas son por minuto de juego (<code>_per_min</code>). Los totales proyectados (<code>_projected</code>) son una forma de mostrarlas.</p></div>
+    <div class="box contract"><h4>Física relativa</h4><p>El simulador corre de más, así que la física se muestra como ranking y percentil ("el que más corrió"), no en kilómetros.</p></div>
+    <div class="box contract"><h4>Ataque normalizado</h4><p><code>x_att</code> siempre apunta al arco rival, sea local o visitante.</p></div>
+  </div>
+</section>
+
+<section id="interpret">
+  <h2><span class="tag t-interpret">Etapa 2</span> Interpret: saca los números</h2>
+  <p>Lee la carpeta del partido y calcula lo que explica qué pasó: física, pases, presión, xG, jugadas, quién dominó cada tramo, la nota de cada jugador y los momentos que vale la pena contar. Todo es código común, sin IA generativa, así que el mismo partido siempre da los mismos números.</p>
+
+  <div class="cols">
+    <div class="box interpret"><h4>Entra</h4><p><code>meta</code>, <code>roster</code>, <code>tracking</code> y <code>events</code> del partido (<code>analyze_match.py:132</code>), más los dos modelos de <code>models/</code>.</p></div>
+    <div class="box interpret"><h4>Sale</h4><p>La subcarpeta <code>&lt;partido&gt;/interpret/</code> con los 8 archivos del Contrato 2.</p></div>
+    <div class="box interpret"><h4>Comandos</h4><p><code>analyze</code>, <code>mcp</code>, <code>shots</code>, <code>train-xg</code>, <code>train-xpass</code><br><span class="mono" style="color:var(--muted)">python -m tacticai.interpret …</span></p></div>
+  </div>
+
+  <h3>Cómo está armado el código</h3>
+  <p><code>src/tacticai/interpret/</code>, unas 1.600 líneas. Mismo orden que Ingest, pero <strong>sin carpeta <code>infrastructure/</code></strong>: para leer y escribir archivos usa la de Ingest.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Carpeta</th><th>Qué hace</th><th>Archivos</th></tr></thead>
+    <tbody>
+      <tr><td><code>domain/</code></td><td>Los cálculos, un archivo por métrica. No toca archivos.</td><td><code>physical</code>, <code>passes</code>, <code>pressure</code>, <code>lines</code>, <code>sequences</code>, <code>timeline</code>, <code>rating</code>, <code>quality</code>, <code>patterns</code>, <code>shots</code>, <code>logistic</code>, <code>frame</code></td></tr>
+      <tr><td><code>application/</code> (siempre)</td><td><code>analyze_match</code> escribe el paquete; <code>stats_tools</code> responde preguntas sobre él sin recalcular.</td><td><code>analyze_match</code>, <code>stats_tools</code></td></tr>
+      <tr><td><code>application/</code> (entrenamiento)</td><td>Se usaron una vez: juntar remates y pases corriendo el simulador, y entrenar los modelos.</td><td><code>build_shot_dataset</code>, <code>train_models</code></td></tr>
+      <tr><td><code>interfaces/</code></td><td>CLI y servidor MCP. El MCP es una capa fina sobre <code>stats_tools</code>.</td><td><code>cli</code>, <code>mcp_server</code></td></tr>
+      <tr><td><code>models/</code></td><td>Los modelos entrenados.</td><td><code>xg_v1.json</code>, <code>xpass_v1.json</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Cómo se calcula</h3>
+  <div class="cols">
+    <div class="box interpret"><h4>Desde las posiciones</h4><ul>
+      <li><strong>Distancia y velocidad:</strong> cuánto se movió cada jugador entre un instante y el siguiente.</li>
+      <li><strong>Sprint:</strong> al menos 1 s más rápido que el 10 % más veloz del partido.</li>
+      <li><strong>Presión:</strong> rivales a 5 m o menos del que tiene la pelota; pesan más los más cercanos.</li>
+      <li><strong>Líneas rotas:</strong> en el momento del pase se agrupan los rivales en hasta 3 líneas y se cuenta cuántas quedaron atrás.</li>
+      <li><strong>Jugadas:</strong> de que un equipo gana la pelota hasta que la pierde.</li>
+    </ul></div>
+    <div class="box interpret"><h4>Con modelos</h4><ul>
+      <li><strong>xG:</strong> probabilidad de gol de un tiro, según distancia, ángulo, defensores en el camino y posición del arquero.</li>
+      <li><strong>xPass:</strong> probabilidad de que un pase llegue, según largo, presión y rivales cerca de la línea. La dificultad es 1 − xPass.</li>
+      <li>Los dos son regresiones logísticas entrenadas con miles de tiros y pases del simulador. Miden "en este motor", no en el fútbol real.</li>
+    </ul></div>
+    <div class="box interpret"><h4>Con fórmulas fijas</h4><ul>
+      <li><strong>Momentum por tramo:</strong> diferencia de xG, llegadas al último tercio y posesión, suavizada.</li>
+      <li><strong>Nota:</strong> arranca en 6 y suma o resta por líneas rotas, pases hacia adelante, xG, goles, quites y pérdidas en campo propio. Los arqueros no llevan nota todavía.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="mcp">
+  <h2>Cómo se consulta: Stats Tools por MCP</h2>
+  <p>Los agentes no leen los archivos directamente: preguntan a las Stats Tools. <code>python -m tacticai.interpret mcp --root &lt;carpeta de partidos&gt;</code> levanta un servidor MCP (stdio) con 11 herramientas de solo lectura.</p>
+  <p class="mono" style="font-size:.85rem">list_matches · match_summary · team_stats · player_stats · top_players · events · sequences · timeline · shot_map · pressure_windows · quality</p>
+  <ul>
+    <li><strong>Nunca recalculan</strong> desde el tracking ni llaman a un LLM. Filtran y suman lo que ya escribió <code>analyze</code>.</li>
+    <li><strong>Todas aceptan <code>until_t_s</code>:</strong> devuelven solo lo que pasó hasta ese segundo. Sirve para el modo "en vivo".</li>
+    <li>Lo que solo tiene sentido con el partido completo (física, nota, calidad) viene marcado como <code>full_match</code>.</li>
+    <li>Los errores vuelven como <code>{"error": …, "valid": […]}</code> para que el agente corrija la pregunta.</li>
+  </ul>
+</section>
+
+<section id="codigo">
+  <h2>Dependencias de código</h2>
+  <p>Van en un solo sentido: <strong>Interpret importa de Ingest; Ingest no importa nada de Interpret.</strong> Pero Interpret no depende solo de los archivos del contrato: también usa código de Ingest.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Interpret importa</th><th>Qué</th><th>Lo usan</th></tr></thead>
+    <tbody>
+      <tr><td><code>ingest.domain.contract</code></td><td><code>team_of</code></td><td>physical, pressure, sequences</td></tr>
+      <tr><td><code>ingest.domain.events</code></td><td>Dueño de la pelota (<code>infer_owner</code>, <code>stable_owners</code>), disparador de remate (<code>kick_at</code>), <code>is_pass</code>, <code>is_break</code>, umbrales y constantes de tiro</td><td>shots, pressure, sequences, analyze_match</td></tr>
+      <tr><td><code>ingest.infrastructure.files</code></td><td>Lectura y escritura de JSON</td><td>analyze_match, stats_tools, build_shot_dataset</td></tr>
+      <tr><td><code>ingest.application.generate_match</code> y las recetas</td><td>Correr el simulador</td><td>Solo <code>build_shot_dataset</code> (entrenamiento)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note"><strong>Por qué importa:</strong> el contrato, la regla del dueño de la pelota y la lectura de archivos viven dentro de Ingest, pero las usa todo el sistema. Así se garantiza que Ingest e Interpret cuenten los tiros y la posesión igual: en 5 partidos, los tiros coinciden al 100 %. El costo es que ese núcleo compartido parece de Ingest cuando en realidad es de todos.</div>
+</section>
+
+<section id="runtime">
+  <h2>Dónde corre cada cosa hoy</h2>
+  <div class="cols">
+    <div class="box ingest"><h4>Simulador: imagen <code>tai-engine</code></h4><p>El motor C++ está en <code>engine/</code>. La imagen se construye solo con esa carpeta y le instala numpy y opencv. <strong>Nuestro código no está adentro:</strong> se monta el repo y se apunta <code>PYTHONPATH=/engine:/work/src</code>. Necesita una pantalla virtual (Xvfb) para grabar video.</p></div>
+    <div class="box interpret"><h4>Interpret: Python común</h4><p><code>analyze</code> y las Stats Tools corren en cualquier lado con <code>PYTHONPATH=src</code>. Necesitan numpy y, para el MCP, el paquete <code>mcp</code>. Solo <code>build_shot_dataset</code> necesita el simulador.</p></div>
+    <div class="box todo"><h4>Sin empaquetado</h4><p>No hay <code>pyproject.toml</code> ni <code>requirements.txt</code>. Las dependencias son implícitas. Hace falta definirlas para armar cualquier imagen de backend.</p></div>
+  </div>
+</section>
+
+<section id="propuesta">
+  <h2><span class="tag t-todo">Propuesta</span> Cómo se conectaría todo</h2>
+  <p>No está implementado. Es la propuesta que hablamos.</p>
+  <p><strong>No hay un <code>main.py</code> que corra todas las capas en un mismo proceso.</strong> Las etapas siguen conectadas por archivos. Lo que falta es una pieza que decida cuándo corre cada una.</p>
+<pre><code>API (FastAPI) ──pedido──► Job en tai-engine:  search/generate → analyze → (explain…)
+     ▲                                          escribe &lt;partido&gt;/ y &lt;partido&gt;/interpret/
+     │                                                         │
+     └── sirve resultados y WebSocket ◄──── carpeta / Blob ◄───┘
+                                                               │
+                         Agentes (Foundry) ◄── MCP Stats Tools ┘</code></pre>
+  <div class="cols">
+    <div class="box"><h4><code>src/tacticai/pipeline.py</code></h4><p>Una función <code>run(recipe, out)</code> que llama en orden a la búsqueda de Ingest, a <code>analyze</code> y, más adelante, a Explain. Sin lógica propia. Corre adentro del job del simulador, así que un partido "listo" ya viene analizado.</p></div>
+    <div class="box"><h4>Una sola API</h4><p>FastAPI en Container Apps. Recibe pedidos, lanza el job, informa el estado y sirve los resultados. Tiene el WebSocket. No corre ninguna etapa.</p></div>
+    <div class="box"><h4>"En vivo" = reproducción</h4><p>Con el sintético todo está precalculado. El WebSocket emite eventos, tramos e insights a medida que avanza <code>t_s</code>. Las Stats Tools con <code>until_t_s</code> les muestran a los agentes solo el pasado.</p></div>
+    <div class="box"><h4>Dos imágenes</h4><p><strong>Simulador + pipeline</strong> (pesada, corre a pedido) y <strong>API + MCP + agentes</strong> (liviana, siempre prendida). El MCP baja el partido de Blob a disco antes de leerlo, así <code>stats_tools.py</code> no cambia.</p></div>
+  </div>
+  <p>Cada etapa conserva su CLI para desarrollo y pruebas.</p>
+</section>
+
+<section id="abierto">
+  <h2>Lo que falta o no cierra</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Tema</th><th>Qué pasa</th></tr></thead>
+    <tbody>
+      <tr><td>Arquitectura de Interpret en el backend</td><td>No está escrita en ningún documento: quién dispara <code>analyze</code>, dónde vive <code>interpret/</code> en la nube, de dónde lee el MCP</td></tr>
+      <tr><td>Documentos que no coinciden</td><td>Estado de pedidos: <code>pipeline.md</code> dice Table Storage, <code>deploy/README.md</code> dice Cosmos DB. Stream: WebSocket en la API contra Event Hubs o Web PubSub</td></tr>
+      <tr><td>Umbrales en frames</td><td>Ingest usa frames (<code>owner_min_frames</code>, <code>shot_debounce</code>, <code>goal_lookahead</code>) y el contrato pide segundos. Con video a otro fps se rompen</td></tr>
+      <tr><td>Quites</td><td>Recall 0,41 frente al motor. Documentado como límite</td></tr>
+      <tr><td>Calidad del tracking</td><td>El sintético la llena en 1, así que el agente de calidad no tiene nada que detectar sin el degradador (opcional)</td></tr>
+      <tr><td>Partidos viejos</td><td><code>data/matches/match_1/</code> no tiene <code>roster.json</code>: se generó antes del roster</td></tr>
+      <tr><td>Agentes LLM</td><td>Scenario Agent (Ingest), agentes de calidad y táctico (Interpret): esperan Foundry</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>Fuentes: <code>docs/pipeline.md</code>, <code>docs/contracts.md</code>, <code>deploy/README.md</code> y el código en <code>src/tacticai/</code>.</footer>
+</div>
+</body>
+</html>
