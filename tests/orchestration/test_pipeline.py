@@ -1,6 +1,8 @@
+import io
 import hashlib
 import json
 import os
+import sys
 
 import pytest
 
@@ -302,3 +304,13 @@ def test_refresh_recomputes_in_a_temp_folder_then_swaps_and_enriches(monkeypatch
     assert [n for n in os.listdir(dest) if n.startswith(".")] == []
     with pytest.raises(RuntimeError):
         pipeline.refresh("20261024-000000-bbbb")
+
+
+def test_refresh_all_survives_non_cp1252_warning(monkeypatch):
+    monkeypatch.setattr(pipeline, "refresh", lambda m: ["non‑breaking"])
+    monkeypatch.setattr(pipeline, "_matches", lambda: ["20261024-000000-aaaa"])
+    out = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", out)
+    assert pipeline.main(["refresh", "--all"]) == 0
+    out.seek(0)
+    assert "‑" in out.read()

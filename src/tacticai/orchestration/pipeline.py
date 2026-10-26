@@ -301,6 +301,8 @@ def start(job_id=None):
 
 
 def main(argv=None):
+    for s in (sys.stdout, sys.stderr):
+        s.reconfigure(encoding="utf-8")
     argv = sys.argv[1:] if argv is None else argv
     if argv[:1] == ["start"] and len(argv) <= 2:
         return start(*argv[1:])
