@@ -13,6 +13,7 @@ F205 = "data/matches/20261023-235553-f205"
 def _env(monkeypatch):
     for v in foundry._VARS:
         monkeypatch.setenv(v, "x")
+    monkeypatch.setattr(B.causal_judge, "judge", lambda *a, **k: {})  # the judge has its own tests
 
 
 def test_not_configured(monkeypatch):
@@ -70,3 +71,24 @@ def test_compact_masks_agent_context_numbers():
     out = E._compact(d, {})["agent_context"]
     assert out == [{"text": "gained # m, # s", "n": 4, "l": ["in # passes"]}]
     assert not any(c.isdigit() for c in json.dumps(out) if c != "4")
+
+
+@pytest.mark.skipif(not os.path.isdir(F205), reason="needs data/matches")
+def test_explain_all_causal_reject_falls_back_to_template(monkeypatch, tmp_path):
+    _env(monkeypatch)
+    m = tmp_path / "m"
+    shutil.copytree(F205, m)
+    ins = B.build_insights(str(m))
+    items = [E.Item(insight_id=d["insight_id"], fact="A short fact", why="Context for it") for d in ins[:2]]
+    monkeypatch.setattr(foundry, "run", lambda *a_, **k: E.Out(items=items))
+    seen = {}
+
+    def judge(items_, data, **k):
+        seen.update(ids=[i["id"] for i in items_], data=data)
+        return {ins[1]["insight_id"]: "'led to': causal"}
+    monkeypatch.setattr(B.causal_judge, "judge", judge)
+    names = {t: f"T{t}" for t in ("home", "away")}
+    warnings = B.explain_all(ins, B.build_match_context(str(m)), names)
+    assert seen["ids"] == [ins[0]["insight_id"], ins[1]["insight_id"]] and set(seen["data"]) == set(seen["ids"])
+    assert ins[0]["text"]["source"] == "agent" and ins[1]["text"]["source"] == "template"
+    assert f"explain: {ins[1]['insight_id']} agent text rejected (causal: 'led to': causal)" in warnings

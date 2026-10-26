@@ -20,6 +20,11 @@ def _bad_enum(**pairs):
     return None
 
 
+def _num(v, cast, default=None):
+    """The model may send numbers as strings or null ("0", "50", None): coerce, null -> default."""
+    return default if v is None else cast(v)
+
+
 def _page(rows, limit, cursor):
     limit, off = max(1, min(int(limit), 100)), max(0, int(cursor or 0))
     return {"items": rows[off:off + limit], "total": len(rows), "next_cursor": off + limit if off + limit < len(rows) else None}
@@ -61,6 +66,9 @@ class QASession:
         return out
 
     def search_moments(self, kind=None, team=None, player_id=None, period=None, from_t_s=0.0, until_t_s=None, min_importance=0.0, limit=20, cursor=None):
+        period, from_t_s, until_t_s = _num(period, int), _num(from_t_s, float, 0.0), _num(until_t_s, float)
+        min_importance, limit = _num(min_importance, float, 0.0), _num(limit, int, 20)
+
         def run():
             bad = _bad_enum(kind=(kind, KINDS), team=(team, TEAMS))
             if bad:
@@ -90,6 +98,9 @@ class QASession:
         return rows
 
     def search_events(self, type=None, team=None, player_id=None, period=None, from_t_s=0.0, until_t_s=None, min_lines_broken=None, outcome=None, limit=50, cursor=None):
+        period, from_t_s, until_t_s = _num(period, int), _num(from_t_s, float, 0.0), _num(until_t_s, float)
+        min_lines_broken, limit = _num(min_lines_broken, int), _num(limit, int, 50)
+
         def run():
             rows = self._matching(type, team, player_id, period, from_t_s, until_t_s, min_lines_broken, outcome)
             return rows if isinstance(rows, dict) else _page(rows, limit, cursor)
@@ -97,6 +108,9 @@ class QASession:
                                                 min_lines_broken=min_lines_broken, outcome=outcome, limit=limit, cursor=cursor), run)
 
     def count_events(self, type=None, team=None, player_id=None, period=None, from_t_s=0.0, until_t_s=None, min_lines_broken=None, outcome=None):
+        period, from_t_s, until_t_s = _num(period, int), _num(from_t_s, float, 0.0), _num(until_t_s, float)
+        min_lines_broken = _num(min_lines_broken, int)
+
         def run():
             rows = self._matching(type, team, player_id, period, from_t_s, until_t_s, min_lines_broken, outcome)
             return rows if isinstance(rows, dict) else {"count": len(rows)}

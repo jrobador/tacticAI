@@ -67,3 +67,13 @@ def test_all_zero_gives_the_template():
     s.count_events(type="goal", period=9)
     out, errs = Q.validate_answer({"answer": "ignored"}, s, "es")
     assert not errs and out["answer"] == Q.NO_MOMENTS["es"] and out["moments"] == []
+
+
+def test_string_and_null_numeric_args_are_coerced():
+    ev = [{"type": "pass", "t_s": float(i), "team": "home", "player_id": "p", "period": 1, "lines_broken": 1} for i in range(5)]
+    s = session(ev)
+    bad = dict(from_t_s="1", until_t_s="4", period="1", min_lines_broken="1")
+    assert s.count_events(**bad) == {"count": 3}
+    assert s.search_events(**bad, limit="2", cursor="1")["total"] == 3
+    assert s.count_events(from_t_s=None, until_t_s=None) == {"count": 5}
+    assert s.search_moments(from_t_s="0", min_importance="0.5", limit="5")["total"] == 0

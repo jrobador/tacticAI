@@ -8,7 +8,7 @@ import re
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from ...agents import foundry
+from ...agents import causal_judge, foundry
 from ...core.files import read_jsonl
 from ...explain.domain.placeholders import NUMBER_WORDS
 from ..domain.agent_check import check_tactical, citable_text, leaves, resolve_text
@@ -24,7 +24,7 @@ Deliver, in English:
 - phases: at most 3, each a candidate from c2 by its candidate_id. Only ids that appear in c2; never label a stretch without a candidate. No candidates in c2: no phases.
 - key_notes: at most 5, each a note from c3 by its note_index. Only indexes that appear in c3.
 - Rank each list 1, 2, 3... by importance, no repeats.
-- summary: 2-3 sentences connecting the phases and notes.
+- summary: 2-3 sentences that list the phases and notes in order of time with "then", "later", "while"; never use a verb that links one phase to another.
 
 Numbers (the most important rule):
 - You never write a digit or a number word (forbidden: {number_words}). A number can only be a placeholder with the exact key from a citable list, in curly braces. The code fills in the value.
@@ -36,10 +36,15 @@ Numbers (the most important rule):
 Good output:
 phase: candidate_id 0, "The home team won the ball and ran a counter that gained {{c2:results.home.phase_candidates.items.0.values.gain_m}} m."
 key note: note_index 5, "A big chance was scored by a home player, with an engine xG of {{c3:results.all.notes.items.5.evidence.xg}}."
-summary: "The home team's counter led to a big chance and a goal, while the away team answered with a pressure peak."
+summary: "The home team ran a counter and later had a big chance, while the away team had a pressure peak."
 Invalid: "a line-breaking pass sequence of two passes over five seconds gained 21 metres" (number word, number word, digits: use at most one placeholder or no number).
 
-Data limits: relative physics only (no km, no fatigue); xG and xPass are engine values; no Premier League comparisons; no causality, only association in time ("because", "led to", "caused" are not allowed)."""
+Causality (a program rejects violations):
+- Allowed: why a moment is important or significant (its timing, rarity or the score at stake); scoreboard consequences of a goal (took the lead, levelled the score); temporal sequence (then, followed by, ended in, during, while, later).
+- Forbidden: produced, producing, created, caused, led to, resulted in, culminated in, forced, enabled, allowed; shifted or changed control; affecting or offering momentum; signalling; interrupted; extended; defined; generated; grew into; set the tone; responded; thanks to; as a result; "so" meaning a consequence; intentions (trying to, in an attempt to); speculative effects.
+- Rewrite: "a move that produced a big chance" -> "a move that ended in a big chance"; "a spell that produced the goal" -> "a spell followed by the goal"; "mattered because it reduced their pressing" -> "it matters because it came at a decisive stage of the match"; "shifted control of play" -> "a spell of control, then a pressure peak".
+
+Data limits: relative physics only (no km, no fatigue); xG and xPass are engine values; no Premier League comparisons."""
 
 
 class Phase(BaseModel):
@@ -162,6 +167,15 @@ def _build(out, log, n_phases, n_notes):
             why = next(x for x in errors if x.startswith(f"{name}[{i}]")).split(": ", 1)[1]
             warnings.append(f"tactical agent: dropped {name}[{i}] ({why})")
             del block[name][i]
+    items = [{"id": f"{n}[{i}]", "text": x["text"]} for n in ("phases", "key_notes") for i, x in enumerate(block[n])] + [{"id": "summary", "text": block["summary"]["text"]}]
+    rejected = causal_judge.judge(items, {e["call_id"]: e["response"] for e in log.entries})
+    if "summary" in rejected:
+        raise ValueError(f"summary: causal: {rejected['summary']}")
+    for n in ("phases", "key_notes"):
+        for i in reversed(range(len(block[n]))):
+            if f"{n}[{i}]" in rejected:
+                warnings.append(f"tactical agent: dropped {n}[{i}] (causal: {rejected[f'{n}[{i}]']})")
+                del block[n][i]
     block = ranked()
     if (n_phases or n_notes) and not block["phases"] and not block["key_notes"]:
         raise ValueError("no valid phase or key note: " + "; ".join(warnings))

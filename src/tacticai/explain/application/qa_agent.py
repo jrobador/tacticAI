@@ -22,6 +22,7 @@ Tools:
 - search_events: every pass, shot, goal, tackle, set piece and interception of the match, filtered. Items have event_index.
 - count_events: how many events match a filter ({{"count": n}}).
 - For exhaustive questions ("every goal", "all the times...", "how many...") use search_events and count_events, not just search_moments. Use search_moments for "key moments", "best chances" and similar.
+- Goals are the events of type "goal" (search_events type="goal"); the shot that scored is a different event, do not cite it as the goal.
 - "interception" events are passes intercepted by the opponent: their team is the interceptor's side and their player_id is the interceptor. A pass that was intercepted still counts as a pass of the passer.
 - team is "home" or "away"; player_id comes from the players list in the match context. Time is in seconds of the video (t_s). Use at most {max_calls} tool calls in total; plan the filters first. If a tool returns an error, fix the arguments or answer without it.
 

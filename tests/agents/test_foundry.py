@@ -45,3 +45,16 @@ def test_dict_result_is_merged():
     log = foundry.ToolLog()
     t = log.wrap(lambda: {"valid": True}, "t")
     assert t() == {"call_id": "c1", "valid": True}
+
+
+def test_options_classic_model_unchanged():
+    assert foundry._options("gpt-4.1-mini", 300) == {"temperature": 0, "max_tokens": 300}
+    assert foundry._options("gpt-4.1-mini", None) == {"temperature": 0}
+
+
+def test_options_reasoning_model(monkeypatch):
+    monkeypatch.delenv("FOUNDRY_REASONING_EFFORT", raising=False)
+    assert foundry._options("gpt-5-mini", 300) == {"reasoning_effort": "low", "max_tokens": 300 * foundry._CAP_FACTOR}
+    assert foundry._options("O3-mini", None) == {"reasoning_effort": "low"}
+    monkeypatch.setenv("FOUNDRY_REASONING_EFFORT", "minimal")
+    assert foundry._options("gpt-5-mini", None)["reasoning_effort"] == "minimal"

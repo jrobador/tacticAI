@@ -2,6 +2,7 @@
 import json
 import os
 
+from ...agents import causal_judge
 from ...core.files import read_json, read_jsonl, write_atomic
 from ..domain import importance, moments, placeholders as P
 from . import explainer_agent
@@ -79,6 +80,7 @@ def explain_all(insights, ctx, names, agent=None):
     for iid in got:
         if iid not in ids:
             warnings.append(f"explain: explainer returned unknown insight id {iid}")
+    outs = {}
     for d in insights:
         out, errs = got.get(d["insight_id"]), []
         if out is not None:
@@ -88,6 +90,15 @@ def explain_all(insights, ctx, names, agent=None):
                 errs = [e for f in ("fact", "why") for e in P.validate_text(out[f], d["metrics"], d["claims"], "en")]
             if errs:
                 warnings.append(f"explain: {d['insight_id']} agent text rejected ({'; '.join(errs)})")
+        outs[d["insight_id"]] = None if errs else out
+    passed = [d for d in insights if outs[d["insight_id"]] is not None]
+    rejected = causal_judge.judge([{"id": d["insight_id"], "text": f"{outs[d['insight_id']]['fact']} {outs[d['insight_id']]['why']}"} for d in passed],
+                                  {d["insight_id"]: explainer_agent._compact({k: v for k, v in d.items() if k != "text"}, ctx) for d in passed})
+    for iid, why in rejected.items():
+        outs[iid] = None
+        warnings.append(f"explain: {iid} agent text rejected (causal: {why})")
+    for d in insights:
+        out, errs = outs[d["insight_id"]], []
         if out is not None and not errs:
             d["text"] = {"fact": out["fact"], "why": out["why"], "source": "agent"}
         else:

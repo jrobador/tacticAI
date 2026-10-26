@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 API_VERSION = "2024-10-21"
+_REASONING = ("gpt-5", "o1", "o3", "o4")  # reasoning models: no temperature, reasoning tokens count toward the cap
+_CAP_FACTOR = 4
 _VARS = ("FOUNDRY_ENDPOINT", "FOUNDRY_DEPLOYMENT", "FOUNDRY_API_KEY")
 
 
@@ -67,7 +69,15 @@ class ToolLog:
                 f.write(json.dumps(e, ensure_ascii=False, default=str) + "\n")
 
 
-async def _run(instructions, message, tools, response_format, max_tool_calls, max_output_tokens):
+def _options(model: str, max_output_tokens: int | None) -> dict[str, Any]:
+    """Chat options for `model`; reasoning models get reasoning_effort and a larger cap (max_tokens -> max_completion_tokens)."""
+    if not model.lower().startswith(_REASONING):
+        return {"temperature": 0, **({"max_tokens": max_output_tokens} if max_output_tokens else {})}
+    return {"reasoning_effort": os.environ.get("FOUNDRY_REASONING_EFFORT", "low"),
+            **({"max_tokens": max_output_tokens * _CAP_FACTOR} if max_output_tokens else {})}
+
+
+async def _run(instructions, message, tools, response_format, max_tool_calls, max_output_tokens, deployment=None):
     from agent_framework import Agent
     from agent_framework.openai import OpenAIChatCompletionClient
     from openai import AsyncAzureOpenAI
@@ -75,12 +85,11 @@ async def _run(instructions, message, tools, response_format, max_tool_calls, ma
     oai = AsyncAzureOpenAI(azure_endpoint=os.environ["FOUNDRY_ENDPOINT"], api_key=os.environ["FOUNDRY_API_KEY"],
                            api_version=API_VERSION, max_retries=0)  # no SDK retries
     try:
-        client = OpenAIChatCompletionClient(model=os.environ["FOUNDRY_DEPLOYMENT"], async_client=oai)
+        model = deployment or os.environ["FOUNDRY_DEPLOYMENT"]
+        client = OpenAIChatCompletionClient(model=model, async_client=oai)
         if max_tool_calls is not None:
             client.function_invocation_configuration["max_function_calls"] = max_tool_calls
-        options: dict[str, Any] = {"temperature": 0}
-        if max_output_tokens:
-            options["max_tokens"] = max_output_tokens
+        options = _options(model, max_output_tokens)
         if response_format is not None:
             options["response_format"] = response_format
         agent = Agent(client, instructions, tools=list(tools) or None, default_options=options)
@@ -90,11 +99,12 @@ async def _run(instructions, message, tools, response_format, max_tool_calls, ma
 
 
 def run(instructions: str, message: str, *, tools: Sequence[Callable] = (), response_format=None,
-        timeout_s: float, max_tool_calls: int | None = None, max_output_tokens: int | None = None):
+        timeout_s: float, max_tool_calls: int | None = None, max_output_tokens: int | None = None,
+        deployment: str | None = None):
     """One agent run, synchronous. Returns a Pydantic instance (response_format) or the text. Raises on failure."""
     async def go():
         r = await asyncio.wait_for(
-            _run(instructions, message, tools, response_format, max_tool_calls, max_output_tokens), timeout_s)
+            _run(instructions, message, tools, response_format, max_tool_calls, max_output_tokens, deployment), timeout_s)
         if response_format is not None:
             if r.value is None:
                 raise ValueError("model returned no structured output")

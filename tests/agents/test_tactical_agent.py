@@ -22,6 +22,7 @@ def _match(tmp_path, monkeypatch):
     (dest / "interpret" / "agents.json").unlink(missing_ok=True)
     monkeypatch.setattr(foundry, "configured", lambda: True)
     monkeypatch.setenv("FOUNDRY_DEPLOYMENT", "test-model")
+    monkeypatch.setattr(agents.causal_judge, "judge", lambda *a, **k: {})  # the judge has its own tests
     return str(dest)
 
 
@@ -96,3 +97,32 @@ def test_failure_is_a_warning(tmp_path, monkeypatch):
 def test_not_configured(monkeypatch):
     monkeypatch.delenv("FOUNDRY_API_KEY", raising=False)
     assert agents.run_agents("nowhere") == ["agents not implemented"]
+
+
+def _judge(monkeypatch, rejected):
+    monkeypatch.setattr(agents.causal_judge, "judge", lambda items, data, **k: {i["id"]: rejected[i["id"]] for i in items if i["id"] in rejected})
+
+
+def test_causal_rejected_note_is_dropped_and_reranked(tmp_path, monkeypatch):
+    d = _match(tmp_path, monkeypatch)
+    notes = [KeyNote(note_index=0, rank=1, text=f"First {KEY}."), KeyNote(note_index=2, rank=2, text=f"Second {KEY}."), KeyNote(note_index=3, rank=3, text="Both teams.")]
+    monkeypatch.setattr(foundry, "run", fake(tactical(notes=notes)))
+    _judge(monkeypatch, {"key_notes[0]": "'led to': causal"})
+    warnings = run_agents(d)
+    assert [(n["note_index"], n["rank"]) for n in written(d)["tactical"]["key_notes"]] == [(2, 1), (3, 2)]
+    assert warnings == ["tactical agent: dropped key_notes[0] (causal: 'led to': causal)"]
+
+
+def test_causal_rejected_summary_fails_the_run(tmp_path, monkeypatch):
+    d = _match(tmp_path, monkeypatch)
+    monkeypatch.setattr(foundry, "run", fake(tactical()))
+    _judge(monkeypatch, {"summary": "bad"})
+    assert run_agents(d) == ["tactical agent failed: ValueError: summary: causal: bad"]
+    assert not os.path.exists(os.path.join(d, "interpret", "agents.json"))
+
+
+def test_causal_rejecting_everything_fails_the_run(tmp_path, monkeypatch):
+    d = _match(tmp_path, monkeypatch)
+    monkeypatch.setattr(foundry, "run", fake(tactical()))
+    _judge(monkeypatch, {"phases[0]": "x", "key_notes[0]": "y"})
+    assert run_agents(d)[0].startswith("tactical agent failed: ValueError: no valid phase or key note")

@@ -61,7 +61,7 @@ cd ui && npm install && npm run dev
 cd ui && npm install && npm run build
 ```
 
-The `.env` file (git-ignored) holds `FOUNDRY_ENDPOINT`, `FOUNDRY_DEPLOYMENT` and `FOUNDRY_API_KEY`. `TAI_ACCESS_KEY` is optional: when set, `/scenario`, `/ask` and `POST /jobs` need the header `X-Access-Key` (the UI takes it once from `?key=`). The agents read the `FOUNDRY_*` variables; without them every agent falls back to its template or rule, `/scenario` and `/ask` answer 501, and the rest of the app works the same.
+The `.env` file (git-ignored) holds `FOUNDRY_ENDPOINT`, `FOUNDRY_DEPLOYMENT` and `FOUNDRY_API_KEY` (optional: `FOUNDRY_JUDGE_DEPLOYMENT` for a different judge model, `FOUNDRY_REASONING_EFFORT` for reasoning models, default `low`). `TAI_ACCESS_KEY` is optional: when set, `/scenario`, `/ask` and `POST /jobs` need the header `X-Access-Key` (the UI takes it once from `?key=`). The agents read the `FOUNDRY_*` variables; without them every agent falls back to its template or rule, `/scenario` and `/ask` answer 501, and the rest of the app works the same.
 
 Generate one match by hand (the engine needs `xvfb-run` wrapped in `sh -c`), then infer its events on the host:
 
@@ -137,7 +137,7 @@ Built and working end to end:
 - The engine, the job pipeline, the API and the UI, including the library, the lenses, Player Focus, One Metric, the Broadcast console and the three-lens split screen.
 - The deterministic Interpret tools and the goals-added rating.
 - Explain, Personalize and Render, with templates and rules as the fallback of every agent.
-- Eight LLM agents on Microsoft Agent Framework with a Microsoft Foundry model: Scenario and Match Q&A in the API; Tactical Analyst, Explainer, Lens, Recap, Director and Translator in the job (one run each per match; Lens, Recap and Director in parallel). Agents write English once; the Translator produces Spanish. Every text is validated by code and falls back to its template or rule when it fails. Without the `FOUNDRY_*` variables the app behaves exactly as with templates and rules only.
+- Nine LLM agents on Microsoft Agent Framework with a Microsoft Foundry model: Scenario and Match Q&A in the API; Tactical Analyst, Explainer, Lens, Recap, Director, Translator and a Causal Judge in the job (one run each per match; Lens, Recap and Director in parallel). Agents write English once; the Translator produces Spanish. The Causal Judge rejects Tactical and Explainer texts that claim a cause the data does not show. Every text is validated by code and falls back to its template or rule when it fails. Without the `FOUNDRY_*` variables the app behaves exactly as with templates and rules only.
 
 Azure: the Dockerfiles, Bicep and `azd` project exist, but nothing is deployed and none of the Azure behaviour has been run. Deployment is manual; see [deploy/README.md](deploy/README.md), which also lists what is unverified.
 

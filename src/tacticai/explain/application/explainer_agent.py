@@ -32,10 +32,14 @@ Claims:
 - The words go-ahead, took the lead only if claims contain "go_ahead".
 - If the claim is not present, do not imply it in other words either.
 
+Causality (a program rejects violations):
+- Allowed: why a moment is important or significant (its timing, rarity or the score at stake); scoreboard consequences of a goal (took the lead, levelled the score); temporal sequence (then, followed by, ended in, during, while, later).
+- Forbidden: produced, producing, created, caused, led to, resulted in, culminated in, forced, enabled, allowed; shifted or changed control; affecting or offering momentum; signalling; interrupted; set the tone; responded; thanks to; as a result; "so" meaning a consequence; intentions (trying to, in an attempt to); speculative effects.
+- Rewrite: "a move that produced a big chance" -> "a move that ended in a big chance"; "a spell that produced the goal" -> "a spell followed by the goal"; "mattered because it reduced their pressing" -> "it matters because it came at a decisive stage of the match"; "shifted control of play" -> "a spell of control, then a pressure peak".
+
 Style and limits:
 - xG, xPass and goals added are engine values: say "engine xG" and never present them as official statistics.
 - Physical values are relative to this match only. Never compare with other leagues or seasons (no Premier League comparisons).
-- Describe temporal association only; never claim causality (no "because", "thanks to", "led to").
 - Use team and player names as given. Do not invent facts, players, minutes or scores that are not in the input.
 - Answer every insight_id exactly once, with the same id."""
 
