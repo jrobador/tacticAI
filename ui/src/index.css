@@ -1,0 +1,67 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist";
+
+/* Tokens come from the tacticAI logo palette only (assets/brand/README.md).
+   Tier 1 primitives, tier 2 semantics; every other shade is a mix of these three. */
+:root {
+  --navy: #0c172a;
+  --offwhite: #f0f0f0;
+  --lime: #c6f432;
+
+  --background: var(--navy);
+  --foreground: var(--offwhite);
+  --card: color-mix(in oklab, var(--navy) 93%, var(--offwhite));
+  --muted: color-mix(in oklab, var(--navy) 86%, var(--offwhite));
+  --muted-foreground: color-mix(in oklab, var(--offwhite) 66%, var(--navy));
+  --border: color-mix(in oklab, var(--navy) 80%, var(--offwhite));
+  --primary: var(--lime);
+  --primary-foreground: var(--navy);
+  --ring: var(--lime);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Geist Variable", "Inter Variable", system-ui, sans-serif;
+  --radius-lg: 0.625rem;
+}
+
+html { color-scheme: dark; }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+* { border-color: var(--border); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+h1, h2, h3, .font-heading { font-family: var(--font-heading); letter-spacing: -0.01em; }
+
+/* Overlay motion: slide in from the slot's corner, hold, leave. Movement becomes a plain fade under prefers-reduced-motion. */
+@keyframes ov-in-left { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+@keyframes ov-in-right { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes ov-out { to { opacity: 0; transform: translateY(8px); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.ov-in-left { animation: ov-in-left 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ov-in-right { animation: ov-in-right 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ov-out { animation: ov-out 380ms ease-in both; }
+.fade-in { animation: fade-in 300ms ease-out both; }
+.fade-out { animation: fade-out 300ms ease-out both; }
+.rise { animation: rise 450ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .ov-in-left, .ov-in-right, .rise { animation: fade-in 200ms linear both; }
+  .ov-out { animation: fade-out 200ms linear both; }
+}

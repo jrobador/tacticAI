@@ -1,0 +1,22 @@
+data/matches/*
+!data/matches/.gitkeep
+__pycache__/
+.pytest_cache/
+engine/CMakeCache.txt
+engine/CMakeFiles/
+
+# Planning notes kept local until reviewed for publication
+docs/pipeline.md
+docs/tacticai-en-5-jugadas.html
+data/_exp/
+docs/scenario-agent-es.html
+data/datasets/
+.env
+data/*.log
+*.egg-info/
+data/library/
+data/jobs/
+build/
+
+# internal docs, local only
+docs/

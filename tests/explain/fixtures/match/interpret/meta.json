@@ -1,0 +1,163 @@
+{
+  "analysis_version": 1,
+  "match_id": "20261023-235553-f205",
+  "open_play_s": 28.999999999999996,
+  "projection": {
+    "applies": true,
+    "effective_play_s": 3300
+  },
+  "calibration": {
+    "physical_absolute": false
+  },
+  "models": {
+    "xg": {
+      "id": "xg_v1",
+      "trained_on": "shots_v2",
+      "kind": "logistic",
+      "features": [
+        "dist_goal_center_m",
+        "visible_goal_angle_deg",
+        "defenders_in_cone",
+        "nearest_defender_m",
+        "defenders_within_3m",
+        "gk_dist_to_shot_line_m",
+        "gk_off_line_m",
+        "header"
+      ]
+    },
+    "xpass": {
+      "id": "xpass_v1",
+      "trained_on": "v3",
+      "kind": "logistic",
+      "features": [
+        "length_m",
+        "progressive_m",
+        "start_x_att",
+        "passer_pressure",
+        "opponents_near_line",
+        "nearest_opponent_to_receiver_m",
+        "lines_broken",
+        "log1p_nearest_opp",
+        "nearest_opp_cap5",
+        "length_sq_100",
+        "log1p_length"
+      ]
+    },
+    "vaep": {
+      "id": "vaep_v1",
+      "trained_on": "actions_v1",
+      "kind": "logistic",
+      "features": [
+        "a0_pass",
+        "a0_interception",
+        "a0_tackle",
+        "a0_shot",
+        "a0_success",
+        "a0_xa",
+        "a0_ya",
+        "a0_end_xa",
+        "a0_end_ya",
+        "a0_dist",
+        "a0_angle",
+        "a0_end_dist",
+        "a0_end_angle",
+        "a0_dx",
+        "a0_same_team",
+        "a1_pass",
+        "a1_interception",
+        "a1_tackle",
+        "a1_shot",
+        "a1_success",
+        "a1_xa",
+        "a1_ya",
+        "a1_end_xa",
+        "a1_end_ya",
+        "a1_dist",
+        "a1_angle",
+        "a1_end_dist",
+        "a1_end_angle",
+        "a1_dx",
+        "a1_same_team",
+        "a2_pass",
+        "a2_interception",
+        "a2_tackle",
+        "a2_shot",
+        "a2_success",
+        "a2_xa",
+        "a2_ya",
+        "a2_end_xa",
+        "a2_end_ya",
+        "a2_dist",
+        "a2_angle",
+        "a2_end_dist",
+        "a2_end_angle",
+        "a2_dx",
+        "a2_same_team",
+        "seconds",
+        "score_diff",
+        "xg"
+      ],
+      "metrics": {
+        "scores": {
+          "test": {
+            "n": 6649,
+            "goals": 285,
+            "brier": 0.035191928458356246,
+            "log_loss": 0.15101952808848584,
+            "auc": 0.7429388997320454
+          },
+          "baseline": {
+            "n": 6649,
+            "goals": 285,
+            "brier": 0.040391231462168734,
+            "log_loss": 0.16904842652396107,
+            "auc": 0.6785975387872573,
+            "features": [
+              "a0_xa",
+              "a0_ya"
+            ],
+            "l2": 10.0
+          }
+        },
+        "concedes": {
+          "test": {
+            "n": 6649,
+            "goals": 94,
+            "brier": 0.013933977663476989,
+            "log_loss": 0.073120066308347,
+            "auc": 0.6638460165214145
+          },
+          "baseline": {
+            "n": 6649,
+            "goals": 94,
+            "brier": 0.01394706642653328,
+            "log_loss": 0.07434585296866733,
+            "auc": 0.6122182189980038,
+            "features": [
+              "a0_xa",
+              "a0_ya"
+            ],
+            "l2": 10.0
+          }
+        }
+      },
+      "beats_baseline": {
+        "scores": true,
+        "concedes": true
+      }
+    }
+  },
+  "thresholds": {
+    "sprint_speed_m_s": 7.520931658687591,
+    "sprint_min_s": 1.0,
+    "pressure_radius_m": 5.0,
+    "window_open_play_s": 1.611111111111111
+  },
+  "weights": {
+    "momentum": {
+      "xg": 3.0,
+      "final_third_entries": 0.25,
+      "possession_share": 1.0
+    }
+  }
+}

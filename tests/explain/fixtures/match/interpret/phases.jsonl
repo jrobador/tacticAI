@@ -1,0 +1,1 @@
+{"candidate_id": 0, "phase": "counter", "team": "home", "from_t_s": 13.5, "until_t_s": 18.5, "rule": "recovery at start_xa < L/6, +20 m in <= 5 s, reached final third or shot", "evidence": {"event_indices": [3, 4], "sequence_ids": [3], "frame_ranges": [[135, 185]]}, "values": {"gain_m": 21.289, "duration_s": 5.0}}

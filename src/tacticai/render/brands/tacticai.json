@@ -1,0 +1,7 @@
+{
+  "brand_version": 1,
+  "name": "tacticAI",
+  "colors": {"background": "#0B1020", "foreground": "#F4F6FB", "accent": "#2DD4BF"},
+  "font_family": "Inter, system-ui, sans-serif",
+  "logo": "/tacticai-logo-dark-bg.png"
+}

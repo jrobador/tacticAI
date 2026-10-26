@@ -1,0 +1,158 @@
+{
+  "players": [
+    {
+      "player_id": "home-00",
+      "team": "home",
+      "name": "Venmere",
+      "number": 1,
+      "role": "GK"
+    },
+    {
+      "player_id": "home-01",
+      "team": "home",
+      "name": "Thornquill",
+      "number": 5,
+      "role": "CB"
+    },
+    {
+      "player_id": "home-02",
+      "team": "home",
+      "name": "Asquelle",
+      "number": 4,
+      "role": "CB"
+    },
+    {
+      "player_id": "home-03",
+      "team": "home",
+      "name": "Wrenfold",
+      "number": 3,
+      "role": "LB"
+    },
+    {
+      "player_id": "home-04",
+      "team": "home",
+      "name": "Haskettle",
+      "number": 6,
+      "role": "DM"
+    },
+    {
+      "player_id": "home-05",
+      "team": "home",
+      "name": "Dunmorrow",
+      "number": 8,
+      "role": "CM"
+    },
+    {
+      "player_id": "home-06",
+      "team": "home",
+      "name": "Pellaway",
+      "number": 10,
+      "role": "AM"
+    },
+    {
+      "player_id": "home-07",
+      "team": "home",
+      "name": "Tollimar",
+      "number": 2,
+      "role": "RB"
+    },
+    {
+      "player_id": "home-08",
+      "team": "home",
+      "name": "Quennick",
+      "number": 7,
+      "role": "RM"
+    },
+    {
+      "player_id": "home-09",
+      "team": "home",
+      "name": "Corlune",
+      "number": 11,
+      "role": "LM"
+    },
+    {
+      "player_id": "home-10",
+      "team": "home",
+      "name": "Ashbeck",
+      "number": 9,
+      "role": "CF"
+    },
+    {
+      "player_id": "away-00",
+      "team": "away",
+      "name": "Calbrook",
+      "number": 1,
+      "role": "GK"
+    },
+    {
+      "player_id": "away-01",
+      "team": "away",
+      "name": "Mardlow",
+      "number": 3,
+      "role": "LB"
+    },
+    {
+      "player_id": "away-02",
+      "team": "away",
+      "name": "Rellick",
+      "number": 5,
+      "role": "CB"
+    },
+    {
+      "player_id": "away-03",
+      "team": "away",
+      "name": "Brakeby",
+      "number": 4,
+      "role": "CB"
+    },
+    {
+      "player_id": "away-04",
+      "team": "away",
+      "name": "Kestrane",
+      "number": 2,
+      "role": "RB"
+    },
+    {
+      "player_id": "away-05",
+      "team": "away",
+      "name": "Elvasque",
+      "number": 11,
+      "role": "LM"
+    },
+    {
+      "player_id": "away-06",
+      "team": "away",
+      "name": "Strathorne",
+      "number": 8,
+      "role": "CM"
+    },
+    {
+      "player_id": "away-07",
+      "team": "away",
+      "name": "Mossvane",
+      "number": 10,
+      "role": "CM"
+    },
+    {
+      "player_id": "away-08",
+      "team": "away",
+      "name": "Vantrell",
+      "number": 7,
+      "role": "RM"
+    },
+    {
+      "player_id": "away-09",
+      "team": "away",
+      "name": "Fernhallow",
+      "number": 9,
+      "role": "CF"
+    },
+    {
+      "player_id": "away-10",
+      "team": "away",
+      "name": "Brightmoor",
+      "number": 19,
+      "role": "CF"
+    }
+  ]
+}

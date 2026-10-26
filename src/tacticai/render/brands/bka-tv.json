@@ -1,0 +1,7 @@
+{
+  "brand_version": 1,
+  "name": "BKA TV",
+  "colors": {"background": "#1B1B3A", "foreground": "#FFFFFF", "accent": "#F5B700"},
+  "font_family": "Oswald, Impact, sans-serif",
+  "logo": "/crest-bka.png"
+}

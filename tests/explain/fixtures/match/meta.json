@@ -1,0 +1,60 @@
+{
+  "contract_version": 1,
+  "match_id": "20261023-235553-f205",
+  "source": {
+    "kind": "synthetic",
+    "camera_setup": "synthetic",
+    "detail": "tacticAI engine, seed 0",
+    "synthetic": {
+      "seed": 0,
+      "engine": "tacticAI Match Engine",
+      "engine_image_id": null,
+      "steps": 300,
+      "mp4_frames": 369,
+      "physics_steps_per_frame": 10,
+      "kickoff_team": "home",
+      "second_half_step": 1500,
+      "recipe_mode": "situation",
+      "render": true,
+      "styles": {
+        "home": "counter",
+        "away": "balanced"
+      },
+      "licenses": {
+        "engine": "Apache-2.0 (with public-domain base)",
+        "font": "SIL OFL 1.1"
+      }
+    }
+  },
+  "teams": {
+    "home": {
+      "name": "Brackenford Athletic",
+      "short": "BKA"
+    },
+    "away": {
+      "name": "Wexmoor City",
+      "short": "WXC"
+    }
+  },
+  "pitch": {
+    "length_m": 108.8,
+    "width_m": 70.2
+  },
+  "video": {
+    "fps": 10,
+    "frames": 369,
+    "width": 1280,
+    "height": 720
+  },
+  "formations": {
+    "home": "4-3-3",
+    "away": "4-4-2"
+  },
+  "projection": {
+    "applies": true,
+    "effective_play_s": 3300
+  },
+  "calibration": {
+    "physical_absolute": false
+  }
+}

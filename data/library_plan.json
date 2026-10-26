@@ -1,0 +1,2813 @@
+{
+  "plan_version": 1,
+  "recipes": [
+    {
+      "entry_id": "counter-home-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-home-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "counter-away-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "counter",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-home-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_right-away-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_right",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-home-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "wing_attack_left-away-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "wing_attack_left",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:home"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-shot-01",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-shot-02",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-shot-03",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-shot-04",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-shot-05",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-5-2",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-away-shot-06",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-4-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-5-2",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "shot_by_team:away"
+          ]
+        },
+        "seeds": 50,
+        "steps": 300,
+        "seed": 0
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-07",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-08",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-09",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-home-goal-10",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "home",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:home"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-07",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-4-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-08",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-2-3-1",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-3-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-09",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "5-3-2",
+          "style": "balanced",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "4-2-3-1",
+          "style": "counter",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    },
+    {
+      "entry_id": "build_up-away-goal-10",
+      "recipe": {
+        "mode": "situation",
+        "home": {
+          "formation": "4-1-4-1",
+          "style": "possession",
+          "level": 1.0
+        },
+        "away": {
+          "formation": "3-4-3",
+          "style": "high_press",
+          "level": 1.0
+        },
+        "situation": {
+          "template": "build_up",
+          "ball_owner": "away",
+          "ends_when": "steps",
+          "wanted": [
+            "goal_by_team:away"
+          ]
+        },
+        "seeds": 200,
+        "steps": 300,
+        "seed": 1000
+      }
+    }
+  ]
+}
