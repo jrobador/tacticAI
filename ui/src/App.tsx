@@ -1,41 +1,56 @@
-import { useCallback, useEffect, useState } from 'react'
-import { getCatalog, MOCK } from '@/api/client'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { getCatalog, getLibrary, listMatches } from '@/api/client'
 import type { Catalog } from '@/api/types'
-import type { Draft } from '@/lib/nav'
-import { Alert } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { AlertTriangle } from 'lucide-react'
-import { Home } from '@/screens/Home'
-import { RecipeScreen } from '@/screens/RecipeScreen'
-import { Generating } from '@/screens/Generating'
-import { Watch } from '@/screens/Watch'
-import { WatchEntry } from '@/screens/WatchEntry'
-import { HowItWorks } from '@/screens/HowItWorks'
-import { cn } from '@/lib/utils'
-
-const TABS = [
-  { label: 'Watch', href: '#/', area: 'watch' },
-  { label: 'Three lenses', href: '#/lenses', area: 'lenses' },
-  { label: 'Ask for a play', href: '#/ask', area: 'ask' },
-  { label: 'How it works', href: '#/how', area: 'how' },
-]
-// Which tab a route lives under. The recipe and progress screens belong to Ask for a play.
-const AREA: Record<string, string> = { '': 'watch', matches: 'watch', lenses: 'lenses', ask: 'ask', recipe: 'ask', jobs: 'ask', how: 'how' }
+import { go } from '@/lib/nav'
+import { NewMatch } from '@/screens/NewMatch'
+import { Match } from '@/screens/Match'
+import { Matches, type MatchesData } from '@/screens/Matches'
+import { Architecture } from '@/screens/Architecture'
+import { Sidebar } from '@/components/Sidebar'
+import { ToastProvider, useToast } from '@/components/Toast'
+import { DEFAULT_TEAMS } from '@/lib/format'
+import { isRunning, useNewMatch } from '@/lib/useNewMatch'
 
 const parse = () => location.hash.replace(/^#/, '') || '/'
 
 // App state from the spec: current recipe (draft), job in progress (route /jobs/:id), open match (route /matches/:id).
 export default function App() {
+  return (
+    <ToastProvider>
+      <Shell />
+    </ToastProvider>
+  )
+}
+
+function Shell() {
+  const toast = useToast()
   const [path, setPath] = useState(parse)
-  const [draft, setDraft] = useState<Draft | null>(null)
-  const [text, setText] = useState('')
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [matchesData, setMatchesData] = useState<MatchesData | null>(null)
+  const [matchesError, setMatchesError] = useState<string | null>(null)
+  const [navMin, setNavMin] = useState(false)
+
+  const [, a, id] = path.split('/')
+  const onMatch = a === 'matches' && !!id
 
   useEffect(() => {
     const on = () => setPath(parse())
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
+  }, [])
+
+  // The match page opens with the sidebar collapsed; every other route expands it.
+  useEffect(() => setNavMin(onMatch), [onMatch])
+
+  // Typing N outside an input starts a new match.
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName
+      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !e.altKey && !['INPUT', 'TEXTAREA', 'SELECT'].includes(tag ?? '')) go('/')
+    }
+    window.addEventListener('keydown', on)
+    return () => window.removeEventListener('keydown', on)
   }, [])
 
   const loadCatalog = useCallback(() => {
@@ -44,56 +59,44 @@ export default function App() {
   }, [])
   useEffect(loadCatalog, [loadCatalog])
 
-  const [, a, id] = path.split('/')
-  const area = AREA[a] ?? 'watch'
+  // Reload the match lists when the route changes, so a finished job shows up in the count and the grid.
+  const reloadMatches = useCallback(() => {
+    Promise.all([listMatches(), getLibrary()])
+      .then(([matches, lib]) => { setMatchesData({ matches, entries: lib.entries }); setMatchesError(null) })
+      .catch((e: Error) => setMatchesError(e.message))
+  }, [])
+  useEffect(reloadMatches, [reloadMatches, a])
+
+  // New match: chat and job state live here so they survive navigating away.
+  const onChat = !a || a === 'jobs'
+  const onChatRef = useRef(onChat)
+  onChatRef.current = onChat
+  const teams = matchesData?.matches[0]?.teams ?? DEFAULT_TEAMS
+  const nm = useNewMatch({ catalog, teams, onChat: () => onChatRef.current, toast, reload: reloadMatches })
+  const { follow } = nm
+  useEffect(() => { if (a === 'jobs' && id) follow(id) }, [a, id, follow])
+  const busyLabel = !onChat && isRunning(nm.gen) ? `Making “${nm.gen?.title ?? 'your match'}”` : undefined
+
+  const matchesCount = matchesData ? matchesData.matches.filter((m) => !m.library_id).length + matchesData.entries.length : 0
+
   let screen
-  if (a === 'recipe' && catalog && draft) {
-    screen = <RecipeScreen catalog={catalog} draft={draft} setDraft={setDraft} text={text} setText={setText} />
-  } else if (a === 'jobs' && id) {
-    screen = <Generating jobId={id} hasRecipe={!!draft} />
-  } else if (a === 'matches' && id) {
-    screen = <Watch key={id} matchId={id} />
-  } else if (area === 'ask') {
-    screen = <Home catalog={catalog} text={text} setText={setText} setDraft={setDraft} />
-  } else if (a === 'how') {
-    screen = <HowItWorks />
+  if (a === 'matches' && !id) {
+    screen = <Matches data={matchesData} error={matchesError} />
+  } else if (a === 'arch') {
+    screen = <Architecture />
+  } else if (!onMatch) {
+    screen = (
+      <NewMatch nm={nm} catalog={catalog} catalogError={catalogError} retryCatalog={loadCatalog} teams={teams}
+        namedTeams={!!matchesData?.matches.length} entries={matchesData?.entries ?? []} />
+    )
   } else {
-    screen = <WatchEntry screen={a === 'lenses' ? 'lenses' : 'watch'} />
+    screen = <Match key={id} matchId={id} />
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-5">
-          <a href="#/" aria-label="tacticAI"><img src="/tacticai-logo-dark-bg.png" alt="tacticAI" className="h-9" /></a>
-          <nav aria-label="Main" className="flex items-center gap-1">
-            {TABS.map((t) => (
-              <a
-                key={t.area} href={t.href} aria-current={area === t.area ? 'page' : undefined}
-                className={cn('rounded-lg px-3 py-1.5 text-sm font-medium transition-colors', area === t.area ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}
-              >
-                {t.label}
-              </a>
-            ))}
-          </nav>
-          <div className="w-24 text-right text-xs">
-            {MOCK && <span className="rounded-full border border-primary px-2 py-0.5 text-primary">Mock data</span>}
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-[1400px] px-5 py-5">
-        {catalogError && (
-          <Alert className="mb-4">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium">Could not load the catalog</p>
-              <p className="text-muted-foreground">{catalogError}</p>
-            </div>
-            <Button size="sm" variant="outline" onClick={loadCatalog}>Retry</Button>
-          </Alert>
-        )}
-        {screen}
-      </main>
+    <div className="flex min-h-screen">
+      <Sidebar route={a ?? ''} min={navMin} onToggle={() => setNavMin((v) => !v)} matchesCount={matchesCount} busyLabel={busyLabel} />
+      <main className="flex min-w-0 flex-1 flex-col">{screen}</main>
     </div>
   )
 }

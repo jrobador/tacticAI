@@ -16,6 +16,7 @@ export default defineConfig({
       '/jobs': API,
       '/matches': API,
       '/library': API,
+      '/models': API,
       '/ws': { target: API, ws: true },
     },
   },

@@ -1,11 +1,13 @@
 // Typed client for every endpoint. With VITE_MOCK=1 the same functions
 // are served by src/mocks/api.ts (dynamic import, so the mock layer is not part of a normal build).
 import type {
+  ModelCard,
   AgentsFile, AskResponse, Catalog, Club, CreateJobResult, EnrichedEvent, JobRequest, JobStatus, Lang, Lens, LibraryIndex, MatchBundle,
   ClipManifest, Heatmaps, Insight, MatchMeta, MatchSummary, OverlayQuery, OverlaysResponse, PhaseCandidate, PlayerRow, QualityReport, Recap, Recipe, RecipeIssue, Roster, ScenarioResponse,
   TacticalNote, TeamRow, TimelineWindow, ValidateResponse,
 } from './types'
 import { TERMINAL_STATES } from './types'
+import MOCK_PREVIEW from '@/mocks/preview.svg' // data URI: no request in mock mode
 
 export const MOCK = import.meta.env.VITE_MOCK === '1'
 const mock = () => import('@/mocks/api')
@@ -94,6 +96,17 @@ export async function createJob(req: JobRequest): Promise<CreateJobResult> {
 
 export const getJob = (jobId: string): Promise<JobStatus> =>
   MOCK ? mock().then((m) => m.getJob(jobId)) : json('GET', `/jobs/${jobId}`)
+
+/** Last tracking frame of the running job; rejects with a 404 ApiError until there is one. */
+export const getJobFrame = (jobId: string): Promise<Record<string, unknown>> =>
+  MOCK ? mock().then((m) => m.getJobFrame(jobId)) : json('GET', `/jobs/${jobId}/frame`)
+
+/** Latest recording frame of a running job; n busts the cache. */
+export const previewUrl = (jobId: string, n: number): string =>
+  MOCK ? MOCK_PREVIEW : `/jobs/${jobId}/preview.jpg?t=${n}`
+
+export const getModels = (): Promise<{ models: ModelCard[] }> =>
+  MOCK ? mock().then((m) => m.getModels()) : json('GET', '/models')
 
 /** The 422 body carries the list of {path, message} directly in detail. null when the error has no such list. */
 export function issuesOf(e: unknown): RecipeIssue[] | null {

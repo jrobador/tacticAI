@@ -4,6 +4,7 @@
 // with level 0.7 -> failed; text containing "503" -> /scenario 503; text containing "501" -> 501.
 import { ApiError } from '@/api/client'
 import type {
+  ModelCard,
   AskResponse, Catalog, ClipManifest, Club, CreateJobResult, Heatmaps, Insight, Lang, Lens, Recap, JobRequest, JobStatus, LibraryIndex, MatchBundle, MatchSummary, Recipe,
   OverlayQuery, OverlaysResponse, RecipeIssue, ScenarioResponse, ValidateResponse,
 } from '@/api/types'
@@ -67,7 +68,9 @@ const active = () => [...jobs.values()].find((j) => !isTerminal(j.status))
 
 function patch(id: string, p: Partial<JobStatus>) {
   const j = jobs.get(id)!
-  j.status = { ...j.status, ...p, rev: j.status.rev + 1, updated_at: new Date().toISOString() }
+  const now = new Date().toISOString()
+  const stages = p.state ? { ...j.status.stages, [p.state]: j.status.stages?.[p.state] ?? now } : j.status.stages
+  j.status = { ...j.status, ...p, stages, rev: j.status.rev + 1, updated_at: now }
 }
 
 function runJob(id: string, recipe: Recipe | null) {
@@ -83,6 +86,7 @@ function runJob(id: string, recipe: Recipe | null) {
   steps.push(() => {}, () => {}, () => {}, () => {}, () => {}, () => {}, () => {}, () => {}) // keep "Recording" for ~2 s
   steps.push(() => patch(id, { state: 'analyzing' }), () => {}, () => {}, () => {})
   steps.push(() => patch(id, { state: 'agents' }), () => {}, () => {}, () => {})
+  for (const state of ['explaining', 'personalizing', 'directing', 'rendering_assets'] as const) steps.push(() => patch(id, { state }), () => {}, () => {})
   steps.push(() => {
     patch(id, { state: 'done', match_id: MOCK_MATCH_ID, message: null })
   })
@@ -112,7 +116,7 @@ export async function createJob(req: JobRequest): Promise<CreateJobResult> {
   const recipe = 'recipe' in req ? req.recipe : null
   jobs.set(id, {
     recipe,
-    status: { job_id: id, kind: recipe ? 'recipe' : 'library', state: 'queued', progress: null, match_id: null, message: null, failed_seeds: 0, rev: 0, updated_at: new Date().toISOString() },
+    status: { job_id: id, kind: recipe ? 'recipe' : 'library', state: 'queued', progress: null, match_id: null, message: null, failed_seeds: 0, rev: 0, updated_at: new Date().toISOString(), stages: { queued: new Date().toISOString() } },
   })
   setTimeout(() => runJob(id, recipe), 400)
   return { kind: 'started', job_id: id }
@@ -122,6 +126,18 @@ export async function getJob(id: string): Promise<JobStatus> {
   const j = jobs.get(id)
   if (!j) throw new ApiError(404, 'Unknown job')
   return clone(j.status)
+}
+
+export async function getJobFrame(id: string): Promise<Record<string, unknown>> {
+  if (!jobs.get(id)) throw new ApiError(404, 'no frame yet')
+  return { frame_index: 0, clock_s: 0, ball: { x: 0, y: 0 }, players: [] }
+}
+
+export async function getModels(): Promise<{ models: ModelCard[] }> {
+  const test = { n: 100, goals: 20, brier: 0.17, log_loss: 0.52, auc: 0.7 }
+  return { models: ['xg_v1', 'xpass_v1', 'vaep_v1'].map((id) => ({
+    id, features: ['f1', 'f2'], trained_on: 'mock', n_train: 800, n_test: 100, note: null, test, baseline: { ...test, auc: 0.65, features: ['f1'], l2: 10 },
+    ...(id === 'vaep_v1' ? { concedes: { test, baseline: { ...test, auc: 0.6, features: ['f1'], l2: 10 } } } : {}) })) }
 }
 
 export function watchJob(id: string, onStatus: (s: JobStatus) => void, onError: (e: Error) => void): () => void {

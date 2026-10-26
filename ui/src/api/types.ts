@@ -89,6 +89,10 @@ export type JobState =
   | 'rendering'
   | 'analyzing'
   | 'agents'
+  | 'explaining'
+  | 'personalizing'
+  | 'directing'
+  | 'rendering_assets'
   | 'done'
   | 'no_winner'
   | 'failed'
@@ -102,6 +106,20 @@ export interface JobStatus {
   failed_seeds: number
   rev: number
   updated_at: string
+  stages?: Record<string, string>
+  search?: { seeds: number; met: number; seed: number }
+}
+export interface ModelCard {
+  id: string
+  features: string[]
+  trained_on: string | null
+  n_train: number | null
+  n_test: number | null
+  note: string | null
+  test: { n: number; goals: number; brier: number; log_loss: number; auc: number } | null
+  baseline: { n: number; goals: number; brier: number; log_loss: number; auc: number; features: string[]; l2: number } | null
+  /** vaep_v1 only: `test` and `baseline` above are the scoring sub-model, these are the conceding one. */
+  concedes?: { test: { n: number; goals: number; brier: number; log_loss: number; auc: number } | null; baseline: { n: number; goals: number; brier: number; log_loss: number; auc: number; features: string[]; l2: number } | null }
 }
 export const TERMINAL_STATES: JobState[] = ['done', 'no_winner', 'failed']
 export type JobRequest = { recipe: Recipe } | { library_id: string }
@@ -200,6 +218,8 @@ export interface EnrichedEvent extends MatchEvent {
   difficulty?: number | null
   xg?: number | null
   dist_goal_center_m?: number
+  visible_goal_angle_deg?: number
+  defenders_in_cone?: number
   on_target?: boolean
   zone?: string
 }
