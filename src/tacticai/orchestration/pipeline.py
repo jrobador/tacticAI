@@ -101,7 +101,7 @@ def analyze_and_publish(staging_match, match_id, set_state):
     return warnings
 
 
-def render_library_entry(entry_id, match_id, staging, set_state):
+def render_library_entry(entry_id, match_id, staging, set_state, preview_path=None):
     """Library job, shared with `orchestration library-render`: render the entry's saved recipe and seed, check the tracking
     hash against the index, analyze, agents, publish and set match_id in the index. Returns the warnings."""
     lib = library_dir()
@@ -110,7 +110,7 @@ def render_library_entry(entry_id, match_id, staging, set_state):
         raise RuntimeError(f"unknown library entry {entry_id}")
     recipe = read_json(os.path.join(lib, entry_id, "recipe.json"))
     set_state("rendering", None)
-    out = generate_from_recipe(from_dict(recipe), recipe["seed"], staging, render=True)[0]
+    out = generate_from_recipe(from_dict(recipe), recipe["seed"], staging, render=True, preview_path=preview_path)[0]
     with open(os.path.join(out, "tracking.jsonl"), "rb") as f:
         got = hashlib.sha256(f.read()).hexdigest()
     if got != entry["tracking_sha256"]:
@@ -147,13 +147,15 @@ def _run_recipe(job_id, request):
     out, report = search(
         recipe, staging, workers=int(os.environ.get("TAI_WORKERS", "4")), render_winner=True,
         on_progress=lambda done, total: jobs.write(job_id, progress={"done": done, "total": total}),
-        on_render=lambda: jobs.write(job_id, state="rendering"))
+        on_render=lambda: jobs.write(job_id, state="rendering"),
+        preview_path=os.path.join(jobs.job_dir(job_id), "preview.jpg"))
     found = [os.path.join(out, "search_report.json")] if out else glob.glob(os.path.join(staging, "search_*.json"))
     if found:
         shutil.move(found[0], os.path.join(jobs.job_dir(job_id), "search_report.json"))
     results = report["results"]
     errors = [x for x in results if "error" in x]
-    jobs.write(job_id, failed_seeds=len(errors))
+    jobs.write(job_id, failed_seeds=len(errors), search={
+        "seeds": len(results), "met": sum("error" not in x and x["ok"] for x in results), "seed": report["winner"]})
     if errors and len(errors) == len(results):
         jobs.write(job_id, state="failed", message=f"all seeds failed; first error: {errors[0]['error']}")
         return 1
@@ -170,7 +172,8 @@ def _run_recipe(job_id, request):
 
 def _run_library(job_id, request):
     staging = os.path.join(jobs.job_dir(job_id), "staging")
-    warnings = render_library_entry(request["library_id"], job_id, staging, _job_state(job_id))
+    warnings = render_library_entry(request["library_id"], job_id, staging, _job_state(job_id),
+                                   os.path.join(jobs.job_dir(job_id), "preview.jpg"))
     jobs.write(job_id, state="done", match_id=job_id, message="; ".join(warnings) or None, progress=None)
     return 0
 

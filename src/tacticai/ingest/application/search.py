@@ -34,7 +34,8 @@ def _try(args):
                 **evaluate(recipe, rows, events, roster)}
 
 
-def search(recipe, out_root, workers=4, render_winner=True, frame_timeout=60.0, on_progress=None, on_render=None):
+def search(recipe, out_root, workers=4, render_winner=True, frame_timeout=60.0, on_progress=None, on_render=None,
+           preview_path=None):
     """Returns (winner dir or None, report). Winner = best score among runs that met every boolean predicate.
     on_progress(done, total) fires after each seed; on_render() right before rendering the winner."""
     t0 = time.time()
@@ -75,7 +76,8 @@ def search(recipe, out_root, workers=4, render_winner=True, frame_timeout=60.0, 
     if best and render_winner:
         if on_render:
             on_render()
-        out = generate_from_recipe(recipe, best["seed"], out_root, render=True, frame_timeout=frame_timeout)[0]
+        out = generate_from_recipe(recipe, best["seed"], out_root, render=True, frame_timeout=frame_timeout,
+                                 preview_path=preview_path)[0]
         report["render_matches_headless"] = _sha256(os.path.join(out, "tracking.jsonl")) == best["tracking_sha256"]
         path = os.path.join(out, "search_report.json")
     report["elapsed_s"] = round(time.time() - t0, 1)

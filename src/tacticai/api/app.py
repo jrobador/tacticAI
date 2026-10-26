@@ -1,5 +1,6 @@
 """HTTP API: recipe tools, jobs with a progress WebSocket, matches and library files."""
 import asyncio
+import glob
 import hmac
 import json
 import os
@@ -10,7 +11,7 @@ from collections import deque
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -33,6 +34,7 @@ if os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING"):  # lazy: without the
 app = FastAPI(title="tacticAI")
 LOCK = threading.Lock()  # one worker, one replica: this is the whole job exclusion
 SCENARIO_TIMEOUT_S = 20
+MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "interpret", "models")
 
 
 def fail(status, error, detail=None, **extra):
@@ -149,6 +151,60 @@ def get_job(job_id: str):
     if not status:
         raise HTTPException(404, "job not found")
     return status
+
+
+@app.get("/jobs/{job_id}/frame")
+def get_job_frame(job_id: str):
+    """Last complete line of the tracking.jsonl the job is writing (tail read only)."""
+    if not jobs.JOB_ID_RE.match(job_id):
+        raise HTTPException(404, "job not found")
+    for path in glob.glob(os.path.join(jobs.job_dir(job_id), "staging", "*", "tracking.jsonl")):
+        with open(path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - 16384))
+            lines = f.read().split(b"\n")[:-1]  # the last piece has no newline yet: incomplete
+        if lines and lines[-1]:
+            try:
+                return json.loads(lines[-1])
+            except ValueError:
+                pass
+    return JSONResponse({"error": "no frame yet"}, status_code=404)
+
+
+_last_preview = {}  # job_id -> last complete JPEG served
+
+
+@app.get("/jobs/{job_id}/preview.jpg")
+def get_job_preview(job_id: str):
+    """Latest frame ffmpeg wrote while recording. ffmpeg may be mid-write: only whole JPEGs (FF D8 .. FF D9) go out."""
+    if not jobs.JOB_ID_RE.match(job_id) or not jobs.read(job_id):
+        raise HTTPException(404, "preview not found")
+    try:
+        with open(os.path.join(jobs.job_dir(job_id), "preview.jpg"), "rb") as f:
+            data = f.read()
+    except OSError:
+        data = b""
+    if data[:2] == b"\xff\xd8" and data[-2:] == b"\xff\xd9":
+        _last_preview[job_id] = data
+    elif job_id not in _last_preview:
+        raise HTTPException(404, "preview not found")
+    return Response(_last_preview[job_id], media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/models")
+def get_models():
+    cards = []
+    for name in ("xg_v1", "xpass_v1", "vaep_v1"):
+        with open(os.path.join(MODELS_DIR, f"{name}.json"), encoding="utf-8") as f:
+            m = json.load(f)
+        src = m.get("scores", m)  # vaep keeps its metrics in the scores/concedes sub-models
+        card = {"id": m["id"], "features": m["features"], "trained_on": m.get("trained_on"),
+                "n_train": m.get("n_train"), "n_test": m.get("n_test"), "note": m.get("note"),
+                "test": (src.get("metrics") or {}).get("test"), "baseline": (src.get("metrics") or {}).get("baseline")}
+        if "concedes" in m:  # vaep: test/baseline above are the scoring sub-model; the conceding one goes here
+            card["concedes"] = {"test": m["concedes"]["metrics"].get("test"), "baseline": m["concedes"]["metrics"].get("baseline")}
+        cards.append(card)
+    return {"models": cards}
 
 
 @app.websocket("/ws/jobs/{job_id}")

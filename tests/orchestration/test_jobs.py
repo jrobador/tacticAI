@@ -103,3 +103,13 @@ def test_write_uses_a_unique_temp_file(monkeypatch):
     jobs.write(job_id, state="analyzing")
     assert len(set(seen)) == 2 and all(s.endswith(".tmp") and not s.endswith("status.json.tmp") for s in seen)
     assert os.listdir(jobs.job_dir(job_id)).count("status.json") == 1 and not [f for f in os.listdir(jobs.job_dir(job_id)) if f.endswith(".tmp")]
+
+
+def test_stages_record_first_time_of_each_state():
+    job_id = jobs.create({"recipe": {}})
+    assert list(jobs.read(job_id)["stages"]) == ["queued"]
+    first = jobs.write(job_id, state="searching", progress={"done": 0, "total": 3})["stages"]["searching"]
+    jobs.write(job_id, state="searching", progress={"done": 2, "total": 3})
+    jobs.write(job_id, progress={"done": 3, "total": 3})
+    s = jobs.write(job_id, state="rendering")
+    assert s["stages"]["searching"] == first and list(s["stages"]) == ["queued", "searching", "rendering"]

@@ -49,7 +49,7 @@ def patch_analyze(monkeypatch, job_id):
 
 
 def fake_search(results, winner):
-    def search(recipe, staging, workers, render_winner, on_progress, on_render):
+    def search(recipe, staging, workers, render_winner, on_progress, on_render, preview_path=None):
         for i in range(len(results)):
             on_progress(i + 1, len(results))
         out = None

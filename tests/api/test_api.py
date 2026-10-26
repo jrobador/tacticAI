@@ -422,3 +422,36 @@ def test_ask_429_hourly(client, ask_match, monkeypatch):
         assert ask(client, ask_match).status_code == 200
     r = ask(client, ask_match)
     assert r.status_code == 429 and 0 < r.json()["retry_after_s"] <= 3600
+
+
+def test_job_frame_is_the_last_complete_line(client):
+    job_id = jobs.create({"recipe": RECIPE})
+    assert client.get(f"/jobs/{job_id}/frame").status_code == 404
+    d = os.path.join(jobs.job_dir(job_id), "staging", "recipe_situation_0")
+    os.makedirs(d)
+    open(os.path.join(d, "tracking.jsonl"), "w").write('{"frame_index": 1}\n{"frame_index": 2}\n{"frame_in')
+    assert client.get(f"/jobs/{job_id}/frame").json() == {"frame_index": 2}
+    assert client.get("/jobs/nope/frame").status_code == 404
+
+
+def test_models_has_three_cards(client):
+    models = client.get("/models").json()["models"]
+    assert [m["id"] for m in models] == ["xg_v1", "xpass_v1", "vaep_v1"]
+    assert all(m["features"] and m["test"]["auc"] > 0 for m in models)
+    vaep = models[2]
+    assert vaep["concedes"]["test"]["auc"] > 0 and vaep["concedes"]["baseline"]["auc"] > 0
+    assert "concedes" not in models[0]
+
+
+def test_preview_route(client):
+    jid = jobs.create({"recipe": {}})
+    path = os.path.join(jobs.job_dir(jid), "preview.jpg")
+    assert client.get("/jobs/nope/preview.jpg").status_code == 404
+    assert client.get("/jobs/20261024-000000-ffff/preview.jpg").status_code == 404
+    assert client.get(f"/jobs/{jid}/preview.jpg").status_code == 404
+    whole = b"\xff\xd8jpeg\xff\xd9"
+    open(path, "wb").write(whole)
+    r = client.get(f"/jobs/{jid}/preview.jpg")
+    assert (r.status_code, r.headers["content-type"], r.headers["cache-control"], r.content) == (200, "image/jpeg", "no-store", whole)
+    open(path, "wb").write(b"\xff\xd8half")  # ffmpeg mid-write
+    assert client.get(f"/jobs/{jid}/preview.jpg").content == whole

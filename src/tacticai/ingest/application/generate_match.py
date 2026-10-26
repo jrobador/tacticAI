@@ -34,13 +34,13 @@ def make_meta(match_id, seed, fl, fr, kick, rows, frames, mp4_frames, teams, **e
     }
 
 
-def _simulate(game, out, seed, steps, render, frame_timeout, last_step, end_on=None, row0=0, frame0=0):
+def _simulate(game, out, seed, steps, render, frame_timeout, last_step, end_on=None, row0=0, frame0=0, preview_path=None):
     """Shared loop -> (rows, frames, mp4_frames or None, teams). Stops at `steps` in-play rows, at engine_step
     `last_step`, or when the engine reports the episode done. Counting starts at row0/frame0 (segments);
     `steps` stays absolute."""
     video = dog = None
     if render:
-        video = VideoWriter(os.path.join(out, "video.mp4"), W, H)
+        video = VideoWriter(os.path.join(out, "video.mp4"), W, H, **({"preview_path": preview_path} if preview_path else {}))
         dog = RenderWatchdog(frame_timeout, out)
         dog.start()
     try:
@@ -59,6 +59,7 @@ def _simulate(game, out, seed, steps, render, frame_timeout, last_step, end_on=N
                     if roster is None:
                         teams, roster = build_roster(*game.roster())
                     f.write(json.dumps(make_row(obs, rows, frames, engine_step)) + "\n")
+                    f.flush()  # the API serves the last line of a running job
                     rows += 1
                     idle = 0
                 else:
@@ -104,7 +105,7 @@ def generate_match(seed, steps, out_root, frame_timeout=60.0, render=True):
     return out, rows, frames, mp4_frames
 
 
-def generate_from_recipe(recipe, seed, out_root, render=True, frame_timeout=60.0, steps=None):
+def generate_from_recipe(recipe, seed, out_root, render=True, frame_timeout=60.0, steps=None, preview_path=None):
     """Same outputs as generate_match plus recipe.json; also writes events.jsonl + events_summary.json."""
     cfg = recipe_config(recipe, seed, steps)
     kw = dict(cfg["kwargs"])
@@ -114,7 +115,8 @@ def generate_from_recipe(recipe, seed, out_root, render=True, frame_timeout=60.0
     out = os.path.join(out_root, f"recipe_{recipe.mode}_{seed}")
     os.makedirs(out, exist_ok=True)
     rows, frames, mp4_frames, teams = _simulate(game, out, seed, cfg["steps"], render, frame_timeout,
-                                                 3000 if recipe.mode == "full_match" else cfg["steps"], cfg["end_on"])
+                                                 3000 if recipe.mode == "full_match" else cfg["steps"], cfg["end_on"],
+                                                 preview_path=preview_path)
     write_json(os.path.join(out, "recipe.json"), to_dict(recipe))
     write_json(os.path.join(out, "meta.json"), make_meta(
         os.path.basename(out), seed, recipe.home.formation, recipe.away.formation, kick, rows, frames, mp4_frames, teams,

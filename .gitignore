@@ -20,3 +20,4 @@ build/
 
 # internal docs, local only
 docs/
+.azure/

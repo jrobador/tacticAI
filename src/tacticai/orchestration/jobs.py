@@ -64,6 +64,8 @@ def write(job_id, **fields):
     status.update(fields)
     status["rev"] += 1
     status["updated_at"] = _now()
+    if "state" in fields:  # first time each state is seen; progress updates repeat the state
+        status.setdefault("stages", {}).setdefault(fields["state"], status["updated_at"])
     path = os.path.join(job_dir(job_id), "status.json")
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=job_dir(job_id), suffix=".tmp", delete=False) as f:
         json.dump(status, f)
@@ -80,9 +82,11 @@ def create(request):
         json.dump(request, f)
     status = {"job_id": job_id, "kind": "recipe" if "recipe" in request else "library", "state": "queued",
               "progress": {"done": 0, "total": 0}, "match_id": None, "message": None, "failed_seeds": 0, "rev": 0}
+    now = _now()
+    status.update(updated_at=now, stages={"queued": now})
     with open(os.path.join(job_dir(job_id), "status.json"), "w", encoding="utf-8") as f:
-        json.dump({**status, "updated_at": _now()}, f)
-    _last[job_id] = {**status, "updated_at": _now()}
+        json.dump(status, f)
+    _last[job_id] = status
     return job_id
 
 
