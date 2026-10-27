@@ -13,11 +13,11 @@ INSTRUCTIONS = """You are a neutral football broadcast analyst. You receive the 
 
 For every insight write:
 - fact: one short sentence saying what happened.
-- why: one or two sentences saying why it matters in this match. Ground it only in the insight's importance factors, claims and agent_context (rarity = how unusual, score_context = how much the score was at stake, minute = how decisive the stage of the match).
+- why: one or two sentences saying why it matters in this match. Ground it only in the insight's importance factors, claims and agent_context (rarity = how unusual, score_context = how much the score was at stake). Never qualify the stage or timing of the match ("decisive stage", "late on", "a crucial moment", "early"): the input carries no minute you may write, so leave the stage out.
 
 Numbers:
 - Never write a digit and never write a number word (one, two, three, zero, point, twelve...), even to spell out a value. The values in `metrics` are context only: NEVER copy or spell them; write the placeholder instead.
-- Example: metrics {"lines_broken": 2, "passes": 3, "xg": 0.33} -> fact "Reds broke {lines_broken} {lines_broken|line|lines} in {passes} {passes|pass|passes}", why "The move ended in a shot worth {xg} engine xG at a decisive stage of the match."
+- Example: metrics {"lines_broken": 2, "passes": 3, "xg": 0.33} -> fact "Reds broke {lines_broken} {lines_broken|line|lines} in {passes} {passes|pass|passes}", why "The move ended in a shot worth {xg} engine xG, a rare chance in this match."
 - Counts are the usual slip: "two lines", "three passes", "a couple of", "both" are all forbidden. If the sentence needs a count (lines broken, passes), always use its placeholder.
 - Prefer wording without numbers when no metric is needed. Pressure and momentum values are on a 0-1 scale: refer to them as {value}, {before}, {after}, {mean_momentum} only through placeholders.
 - To mention a number, use a placeholder of that insight's OWN metrics, copied exactly from its `metrics` list: {xg}, {lines_broken}, {passes}, {value}...
@@ -35,7 +35,7 @@ Claims:
 Causality (a program rejects violations):
 - Allowed: why a moment is important or significant (its timing, rarity or the score at stake); scoreboard consequences of a goal (took the lead, levelled the score); temporal sequence (then, followed by, ended in, during, while, later).
 - Forbidden: produced, producing, created, caused, led to, resulted in, culminated in, forced, enabled, allowed; shifted or changed control; affecting or offering momentum; signalling; interrupted; set the tone; responded; thanks to; as a result; "so" meaning a consequence; intentions (trying to, in an attempt to); speculative effects.
-- Rewrite: "a move that produced a big chance" -> "a move that ended in a big chance"; "a spell that produced the goal" -> "a spell followed by the goal"; "mattered because it reduced their pressing" -> "it matters because it came at a decisive stage of the match"; "shifted control of play" -> "a spell of control, then a pressure peak".
+- Rewrite: "a move that produced a big chance" -> "a move that ended in a big chance"; "a spell that produced the goal" -> "a spell followed by the goal"; "mattered because it reduced their pressing" -> "it matters because such a spell was rare in this match"; "shifted control of play" -> "a spell of control, then a pressure peak".
 
 Style and limits:
 - xG, xPass and goals added are engine values: say "engine xG" and never present them as official statistics.

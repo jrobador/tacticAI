@@ -23,7 +23,8 @@ def data(tmp_path, monkeypatch):
     monkeypatch.setattr(pipeline, "personalize_run", lambda d, **kw: STEPS.append("personalize") or [])
     monkeypatch.setattr(pipeline, "plans_run", lambda d, **kw: STEPS.append("plans") or [])
     monkeypatch.setattr(pipeline, "heatmaps_run", lambda d: STEPS.append("heatmaps") or [])
-    monkeypatch.setattr(pipeline, "clips_run", lambda d, video=None: STEPS.append("clips") or ["clip i001 failed: boom"])
+    monkeypatch.setattr(pipeline, "reels_run", lambda d, video=None: STEPS.append("reels") or ["reel g004 failed: boom"])
+    monkeypatch.setattr(pipeline, "rundown_run", lambda d: [])  # the fake matches have no analysis files
     STEPS.clear()
 
 
@@ -92,8 +93,8 @@ def test_recipe_job_publishes_after_analyze(monkeypatch):
     assert pipeline.run(job_id) == 0
     s = jobs.read(job_id)
     assert (s["state"], s["match_id"], s["failed_seeds"]) == ("done", job_id, 1)
-    assert s["progress"] is None and len(calls) == 1 and STEPS == ["explain", "personalize", "plans", "heatmaps", "clips"]
-    assert s["message"] == "agents not implemented; clip i001 failed: boom"
+    assert s["progress"] is None and len(calls) == 1 and STEPS == ["explain", "personalize", "plans", "heatmaps", "reels"]
+    assert s["message"] == "agents not implemented; reel g004 failed: boom"
     assert json.load(open(os.path.join(jobs.match_dir(job_id), "meta.json")))["match_id"] == job_id
     jd = jobs.job_dir(job_id)
     assert os.path.exists(os.path.join(jd, "search_report.json"))
@@ -267,13 +268,13 @@ def test_enrich_creates_the_three_folders_and_replaces_old_ones(monkeypatch):
         pipeline.enrich("20261024-000000-bbbb")
 
 
-def test_enrich_gives_the_clips_step_the_published_video(monkeypatch):
+def test_enrich_gives_the_reels_step_the_published_video(monkeypatch):
     import shutil
     from pathlib import Path
     match_id = "20261024-000000-aaaa"
     shutil.copytree(Path(__file__).parent.parent / "explain" / "fixtures" / "match", jobs.match_dir(match_id))
     got = []
-    monkeypatch.setattr(pipeline, "clips_run", lambda d, video=None: got.append(video) or [])
+    monkeypatch.setattr(pipeline, "reels_run", lambda d, video=None: got.append(video) or [])
     pipeline.enrich(match_id)
     assert got == [os.path.join(jobs.match_dir(match_id), "video.mp4")]
 
@@ -298,7 +299,7 @@ def test_refresh_recomputes_in_a_temp_folder_then_swaps_and_enriches(monkeypatch
         open(os.path.join(d, "interpret", "fresh.txt"), "w").write("new")
     monkeypatch.setattr(pipeline, "refresh_match_files", fake_refresh)
     pipeline.refresh(match_id)
-    assert STEPS == ["refresh", "explain", "personalize", "plans", "heatmaps", "clips"]
+    assert STEPS == ["refresh", "explain", "personalize", "plans", "heatmaps", "reels"]
     assert open(os.path.join(dest, "events.jsonl")).read() == "new"
     assert os.listdir(os.path.join(dest, "interpret")) == ["fresh.txt"]
     assert [n for n in os.listdir(dest) if n.startswith(".")] == []

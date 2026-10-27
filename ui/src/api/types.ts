@@ -184,7 +184,7 @@ export interface RosterPlayer {
 export interface Roster {
   players: RosterPlayer[]
 }
-export type EventType = 'pass' | 'tackle' | 'shot' | 'goal' | 'set_piece'
+export type EventType = 'pass' | 'tackle' | 'shot' | 'goal' | 'set_piece' | 'carry'
 export interface MatchEvent {
   type: EventType
   frame_index: number
@@ -204,6 +204,9 @@ export interface MatchEvent {
   speed_m_s?: number
   scorer_id?: string | null
   kind?: string
+  /** carry: metres and seconds the player ran with the ball. */
+  distance_m?: number
+  duration_s?: number
 }
 
 // ---- Contract 2: analysis package ----
@@ -222,6 +225,8 @@ export interface EnrichedEvent extends MatchEvent {
   defenders_in_cone?: number
   on_target?: boolean
   zone?: string
+  /** vaep_v1: how much the action changed the chances of the acting team (passes, shots, tackles, interceptions). */
+  vaep?: { offensive: number; defensive: number; total: number } | null
 }
 export interface TimelineSide {
   possession_share: number | null
@@ -437,10 +442,10 @@ export interface Heatmaps {
   unit: string
   players: Record<string, { eligible_s: number; grid: number[][] | null }>
 }
-/** render/clips/manifest.json. The clip of an insight lives at render/clips/<insight_id>.mp4. */
-export interface ClipManifest {
-  clips: { insight_id: string; file: string; start_s: number; end_s: number }[]
-  errors: { insight_id: string; message: string }[]
+/** render/reels/manifest.json. A reel is the 9:16 video of a broadcast goal or shot, one file per language; it is ready once the video reaches `t_in`. */
+export interface ReelManifest {
+  reels: { graphic_id: string; type: 'goal' | 'shot'; t_in: number; player_id: string | null; files: Partial<Record<Lang, string>> }[]
+  errors: { graphic_id: string | null; message: string }[]
 }
 /** personalize/recaps/<lens>_<lang>_<club>.json (text already resolved). */
 export interface Recap {

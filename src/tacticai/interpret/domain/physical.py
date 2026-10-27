@@ -75,6 +75,25 @@ def _sprints(ts, speeds, thr):
     return n
 
 
+def sprint_runs(rows, thr):
+    """Every sprint of the match, the same stretches `_sprints` counts: [{player_id, t_s (start), top_speed_m_s, distance_m, duration_s}]."""
+    out = []
+    for i, run in _runs(rows, _players):
+        ts = [p[1] for p in run]
+        sm, dt, start = _smooth([p[4] for p in run], ts), _dt(ts), None
+        for k, s in enumerate(sm + [-1]):
+            if s >= thr:
+                start = k if start is None else start
+            elif start is not None:
+                dur = ts[k - 1] - ts[start] + dt
+                if dur >= SPRINT_MIN_S - 1e-9:
+                    seg = run[start:k]
+                    out.append({"player_id": i, "t_s": ts[start], "top_speed_m_s": max(sm[start:k]), "duration_s": dur,
+                                "distance_m": sum(math.dist(p[2:4], q[2:4]) for p, q in zip(seg, seg[1:]))})
+                start = None
+    return out
+
+
 def _rank(vals):
     """{id: (rank 1 = highest, percentile 0..100)}."""
     n = len(vals)

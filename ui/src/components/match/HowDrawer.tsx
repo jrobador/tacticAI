@@ -26,7 +26,7 @@ function facts(b: MatchBundle, run: RunInfo, insights: Insight[]): string[] {
     `${plural(insights.length, 'moment')} · ${text(insights)}`,
     [run.variants && `${run.variants.files} variants (${split(run.variants, 'Agent', 'Template')})`, run.recaps && `${run.recaps.files} recaps (${split(run.recaps, 'Agent', 'Template')})`].filter(Boolean).join(' · '),
     run.plans ? `${run.plans.files} overlay plans · ${split(run.plans, 'Agent', 'Rules')}` : '',
-    [run.heatmaps != null && `${run.heatmaps} heat maps`, run.clips != null && `${plural(run.clips, '9:16 clip')}`].filter(Boolean).join(' · '),
+    [run.heatmaps != null && `${run.heatmaps} heat maps`, run.clips != null && `${plural(run.clips, '9:16 reel')}`].filter(Boolean).join(' · '),
   ]
 }
 

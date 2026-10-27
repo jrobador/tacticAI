@@ -42,7 +42,7 @@ Invalid: "a line-breaking pass sequence of two passes over five seconds gained 2
 Causality (a program rejects violations):
 - Allowed: why a moment is important or significant (its timing, rarity or the score at stake); scoreboard consequences of a goal (took the lead, levelled the score); temporal sequence (then, followed by, ended in, during, while, later).
 - Forbidden: produced, producing, created, caused, led to, resulted in, culminated in, forced, enabled, allowed; shifted or changed control; affecting or offering momentum; signalling; interrupted; extended; defined; generated; grew into; set the tone; responded; thanks to; as a result; "so" meaning a consequence; intentions (trying to, in an attempt to); speculative effects.
-- Rewrite: "a move that produced a big chance" -> "a move that ended in a big chance"; "a spell that produced the goal" -> "a spell followed by the goal"; "mattered because it reduced their pressing" -> "it matters because it came at a decisive stage of the match"; "shifted control of play" -> "a spell of control, then a pressure peak".
+- Rewrite: "a move that produced a big chance" -> "a move that ended in a big chance"; "a spell that produced the goal" -> "a spell followed by the goal"; "mattered because it reduced their pressing" -> "it matters because such a spell was rare in this match"; "shifted control of play" -> "a spell of control, then a pressure peak".
 
 Data limits: relative physics only (no km, no fatigue); xG and xPass are engine values; no Premier League comparisons."""
 

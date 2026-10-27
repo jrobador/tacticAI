@@ -1,6 +1,7 @@
 """Pure event rules: football events from contract tracking frames, using positions only.
 The ball owner is inferred from positions (`infer_owner`); the frame's `possession` field is never read.
-Passes and tackles use the stabilized owners (`stable_owners`); shots and goals use the raw last touch (`infer_owner`)."""
+Passes, tackles and carries use the stabilized owners (`stable_owners`); shots and goals use the raw last touch (`infer_owner`).
+A touch too short to be stable still counts when the player strikes the ball (a first-time shot or pass): it is a reception."""
 import math
 
 from .clock import FRAME_S
@@ -9,7 +10,8 @@ from .contract import team_of
 POST_M = 3.66  # goal post |y| (Laws of the Game)
 DEFAULTS = dict(owner_radius_m=1.25, owner_max_z_m=1.0, tackle_dist_m=2.0, tackle_max_gap=2, shot_min_speed=18.0,
                 shot_max_abs_y_m=7.5, shot_max_dist_m=40.0, shot_jump_m_s=5.0, shot_debounce=10, goal_lookahead=30,
-                owner_min_frames=3)
+                owner_min_frames=3, carry_min_m=5.0)
+# carry_min_m: a player who moves the ball at least this far is carrying it, below it is a touch (the usual carry cut-off in event data)
 NOT_SHOT_STATES = ("throw_in", "goal_kick", "kick_off")  # a kick from these restarts is not a shot
 
 
@@ -24,16 +26,17 @@ def infer_owner(f, radius_m, max_z_m):
     return (team_of(pid), pid) if d <= radius_m else None
 
 
-def stable_owners(owners, min_frames):
+def stable_owners(owners, min_frames, struck=None):
     """`owners` with every run of the same non-None owner shorter than min_frames replaced by None (loose ball); longer
     runs are kept as is, so an event stays at the run's first frame. Consecutive LINES count as consecutive frames: v1
-    tracking has frame_index gaps (in-play frames only) and they are not treated as breaks. min_frames <= 1 is identity."""
+    tracking has frame_index gaps (in-play frames only) and they are not treated as breaks. min_frames <= 1 is identity.
+    `struck(j)` -> True when the ball was struck right after row j-1: a short run ending there is a first-time touch and is kept."""
     out, i = list(owners), 0
     while i < len(owners):
         j = i
         while j < len(owners) and owners[j] == owners[i]:
             j += 1
-        if owners[i] is not None and j - i < min_frames:
+        if owners[i] is not None and j - i < min_frames and not (struck and j < len(owners) and struck(j)):
             out[i:j] = [None] * (j - i)
         i = j
     return out
@@ -45,6 +48,11 @@ def speed(r):
 
 def xy(r, pid):
     return next((p["x"], p["y"]) for p in r["players"] if p["player_id"] == pid)
+
+
+def owners_of(rows, raw, th):
+    """Stable owners aligned with rows (passes, tackles, carries, pressure): a first-time touch, where the ball leaves faster than it came, is a reception too."""
+    return stable_owners(raw, th["owner_min_frames"], lambda j: speed(rows[j]) - speed(rows[j - 1]) >= th["shot_jump_m_s"])
 
 
 def is_break(a, b):
@@ -88,8 +96,18 @@ def kick_at(rows, i, touch, prev, last, who, half, min_speed, th):
 def extract(rows, th, length_m=108.8):
     half = length_m / 2
     raw = [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]  # shots, goals: one-touch shooters
-    owners = stable_owners(raw, th["owner_min_frames"])  # passes, tackles: possession changes
+    owners = owners_of(rows, raw, th)  # passes, tackles, carries: possession changes
     ev = []
+    since = None  # row index where the current owner's spell with the ball began (carries)
+
+    def carry(last, end_i):
+        """The owner's spell from `since` to row end_i: a carry when he moved the ball carry_min_m or more."""
+        t, pid, _ = last
+        a, z = rows[since], rows[end_i]
+        d = math.dist(xy(a, pid), xy(z, pid))
+        if d >= th["carry_min_m"]:
+            add(a, "carry", t, pid, a["ball"]["x"], a["ball"]["y"], end_x=round(z["ball"]["x"], 2), end_y=round(z["ball"]["y"], 2),
+                distance_m=round(d, 2), duration_s=round(z["t_s"] - a["t_s"], 2))
 
     def add(r, typ, team, pid, x, y, **kw):
         ev.append(dict(type=typ, frame_index=r["frame_index"], t_s=r["t_s"], clock_s=r["clock_s"], period=r["period"],
@@ -136,6 +154,8 @@ def extract(rows, th, length_m=108.8):
             continue
         if last and owners[i] != last[:2]:
             (t1, p1, li), (t2, p2) = last, owners[i]
+            carry(last, li)
+            since = i
             if not any(is_break(rows[k - 1], rows[k]) for k in range(li + 1, i + 1)):
                 o = rows[li]["ball"]
                 end = dict(end_x=round(b["x"], 2), end_y=round(b["y"], 2))
@@ -145,7 +165,11 @@ def extract(rows, th, length_m=108.8):
                     add(r, "tackle", t2, p2, b["x"], b["y"], from_player_id=p1)
                 else:
                     add(r, "pass", t1, p1, o["x"], o["y"], to_player_id=None, **end, outcome="intercepted", intercepted_by=p2)
+        elif last is None:
+            since = i
         last = (*owners[i], i)
+    if last:
+        carry(last, last[2])
     ev.sort(key=lambda e: e["t_s"])
     return ev
 

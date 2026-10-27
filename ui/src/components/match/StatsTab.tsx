@@ -1,8 +1,9 @@
-import type { EnrichedEvent, MatchBundle, ModelCard, Side } from '@/api/types'
-import { eventTitle, mmss, nameOf, type Names } from '@/lib/format'
+import type { MatchBundle, ModelCard, Side } from '@/api/types'
+import { mmss, nameOf, type Names } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { modelText, MODEL_NOTE, type ModelId } from './modelInfo'
 import { windowAt, type Det, type TrackingFrame } from './model'
+import { MatchStats } from './MatchStats'
 import { Term } from './Term'
 
 /** Everything the Stats tab needs; the page fills it in and keeps it current with the video. */
@@ -19,6 +20,8 @@ export interface StatsTabProps {
   /** The shot, pass or player whose breakdown is open. */
   det: Det | null
   onDet: (d: Det | null) => void
+  /** Sprint threshold of the match (interpret/meta.json), null until it loads. */
+  sprint: { speed: number; minS: number } | null
   onSeek: (t: number) => void
 }
 
@@ -29,7 +32,7 @@ const head = 'font-mono text-[10.5px] font-medium uppercase tracking-[.06em] tex
 const monoNote = 'font-mono text-[11px] font-medium text-dim'
 
 /** Last frame at or before t (tracking is sorted by time). */
-function frameAt(frames: TrackingFrame[], t: number): TrackingFrame | undefined {
+export function frameAt(frames: TrackingFrame[], t: number): TrackingFrame | undefined {
   let lo = 0
   let hi = frames.length - 1
   let best = -1
@@ -78,26 +81,6 @@ function Radar({ bundle, tracking, time, focusId, names }: Pick<StatsTabProps, '
   )
 }
 
-function Pressure({ bundle }: { bundle: MatchBundle }) {
-  return (
-    <div className="flex flex-col gap-[7px]">
-      <div className="flex items-baseline justify-between">
-        <span className="text-sm font-semibold"><Term k="pressure">Pressure index</Term></span>
-        <span className={monoNote}>match mean</span>
-      </div>
-      {(['home', 'away'] as Side[]).map((s) => {
-        const v = bundle.teams.find((t) => t.team === s)?.pressure ?? null
-        return (
-          <div key={s} className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2.5">
-            <span className="text-xs font-semibold">{bundle.meta.teams[s].short}</span>
-            <span className="h-[5px] overflow-hidden rounded-[3px] bg-[#1f2b40]"><span className="block h-full" style={{ width: `${(v ?? 0) * 100}%`, background: s === 'home' ? INK : SLATE }} /></span>
-            <span className="text-right font-heading text-[13px] font-semibold">{v === null ? '—' : v.toFixed(2)}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 function Momentum({ bundle, time }: { bundle: MatchBundle; time: number }) {
   const w = bundle.timeline
@@ -130,69 +113,46 @@ function Momentum({ bundle, time }: { bundle: MatchBundle; time: number }) {
   )
 }
 
-function chipOf(e: EnrichedEvent): { label: string; value: string; kind: 'shot' | 'pass'; concept: 'xg' | 'xpass' } | null {
-  if (e.type === 'shot' && e.xg != null) return { label: 'xG', value: e.xg.toFixed(3), kind: 'shot', concept: 'xg' }
-  if (e.type === 'pass' && e.xpass != null) return { label: 'xPass', value: e.xpass.toFixed(2), kind: 'pass', concept: 'xpass' }
-  return null
-}
 
-function Events({ bundle, names, time, onDet, onSeek }: Pick<StatsTabProps, 'bundle' | 'names' | 'time' | 'onDet' | 'onSeek'>) {
-  const rows = bundle.events.map((e, i) => ({ e, i })).filter((x) => x.e.t_s <= time).reverse()
-  const first = bundle.events[0]
-  return (
-    <div className="flex flex-col">
-      <div className="flex items-baseline justify-between pb-1">
-        <span className="text-sm font-semibold"><Term k="events">Events</Term> <span className="font-normal text-dim">· inferred from positions</span></span>
-        <span className="font-mono text-[11px] font-medium text-muted-foreground">{rows.length} so far</span>
-      </div>
-      {rows.length === 0 && <span className="py-2 text-[12.5px] text-dim">Kick-off.{first ? ` The first event lands at ${mmss(first.t_s)} on the clip.` : ''}</span>}
-      {rows.map(({ e, i }, j) => {
-        const num = chipOf(e)
-        return (
-          <div key={i} className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 border-t border-foreground/[.06] py-2">
-            <button type="button" title="Jump to this moment" onClick={() => onSeek(e.t_s)} className={cn('text-left font-mono text-[11.5px] font-medium hover:text-foreground', j === 0 ? 'text-primary' : 'text-muted-foreground')}>{mmss(e.clock_s)}</button>
-            <span className="flex min-w-0 flex-col gap-px">
-              <span className="text-[12.5px] font-semibold">{eventTitle(e, names)}</span>
-              <span className="text-[11.5px] text-muted-foreground">{bundle.meta.teams[e.team].name}</span>
-            </span>
-            {num && (
-              <div className="flex items-center gap-[7px]">
-                <Term k={num.concept} className="text-[11px] font-medium text-muted-foreground">{num.label}</Term>
-                <button type="button" title="Open the breakdown" onClick={() => onDet({ kind: num.kind, i })} className="rounded-[7px] border border-foreground/20 bg-[#152034] px-2 py-1 font-heading text-[13.5px] font-semibold hover:border-primary">{num.value}</button>
-              </div>
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 const ITEM: Record<string, string> = { pass: 'passes', shot: 'shots', tackle: 'tackles', interception: 'interceptions' }
 
-function Players({ bundle, onDet }: { bundle: MatchBundle; onDet: StatsTabProps['onDet'] }) {
-  const rated = bundle.players.filter((p) => p.rating.value !== null && p.rating.breakdown.length > 0).sort((a, b) => (b.rating.value ?? 0) - (a.rating.value ?? 0))
+/** Seconds a player's row stays lit after one of his actions adds VAEP. */
+const VAEP_FLASH_S = 2
+
+function Players({ bundle, time, onDet }: { bundle: MatchBundle; time: number; onDet: StatsTabProps['onDet'] }) {
+  // VAEP so far: the sum of each rated action up to the video time. At the end of the clip it equals players.json.
+  const sofar = new Map<string, number>()
+  const lastAt = new Map<string, number>()
+  for (const e of bundle.events) {
+    if (e.t_s > time || !e.vaep || !e.player_id) continue
+    sofar.set(e.player_id, (sofar.get(e.player_id) ?? 0) + e.vaep.total)
+    lastAt.set(e.player_id, e.t_s)
+  }
+  const rated = bundle.players.filter((p) => p.rating.value !== null && p.rating.breakdown.length > 0)
+    .map((p) => ({ ...p, now: sofar.get(p.player_id) ?? 0 }))
+    .sort((a, b) => b.now - a.now)
   const maxAbs = Math.max(0.001, ...rated.map((p) => Math.abs(p.rating.value ?? 0)))
   return (
     <div className="flex flex-col">
       <div className="flex items-baseline justify-between pb-1">
         <span className="text-sm font-semibold"><Term k="vaep">VAEP (goals added)</Term></span>
-        <span className={monoNote}>vaep_v1 · open a player</span>
       </div>
       {rated.length === 0 && <span className="py-2 text-[12.5px] text-dim">No player has a rated action in this clip.</span>}
       {rated.map((p) => {
         const r = bundle.roster.players.find((x) => x.player_id === p.player_id)
-        const v = p.rating.value ?? 0
+        const v = p.now
+        const lit = time - (lastAt.get(p.player_id) ?? -99) < VAEP_FLASH_S
         return (
           <button
             key={p.player_id} type="button" onClick={() => onDet({ kind: 'player', id: p.player_id })}
-            className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_58px] items-center gap-2.5 rounded-md border-t border-foreground/[.06] px-1 py-2 text-left hover:bg-[#16223a]"
+            className={cn('grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_58px] items-center gap-2.5 rounded-md border-t border-foreground/[.06] px-1 py-2 text-left transition-colors duration-500 hover:bg-[#16223a]', lit && 'bg-primary/15')}
           >
             <span className="flex min-w-0 flex-col gap-px">
               <span className="text-[13px] font-semibold">{r?.name ?? p.player_id}</span>
               <span className="text-[10.5px] text-dim">{bundle.meta.teams[p.team].short}{r ? ` · #${r.number} · ${r.role}` : ''}</span>
             </span>
-            <span className="h-[5px] overflow-hidden rounded-[3px] bg-[#1f2b40]"><span className="block h-full" style={{ width: `${(Math.abs(v) / maxAbs) * 100}%`, background: v > 0 ? '#C6F432' : '#7D838D' }} /></span>
+            <span className="h-[5px] overflow-hidden rounded-[3px] bg-[#1f2b40]"><span className="block h-full transition-[width] duration-500" style={{ width: `${(Math.abs(v) / maxAbs) * 100}%`, background: v > 0 ? '#C6F432' : '#7D838D' }} /></span>
             <span className={cn('text-right font-heading text-sm font-semibold', v > 0 ? 'text-primary' : 'text-muted-foreground')}>{sgn(v, 3)}</span>
           </button>
         )
@@ -280,11 +240,10 @@ export function StatsTab(p: StatsTabProps) {
   if (view) return <Detail view={view} models={p.models} onBack={() => p.onDet(null)} />
   return (
     <div className="flex flex-col gap-3.5">
+      <MatchStats bundle={p.bundle} tracking={p.tracking} time={p.time} sprint={p.sprint} models={p.models} />
       <Radar {...p} />
-      <Pressure bundle={p.bundle} />
       <Momentum bundle={p.bundle} time={p.time} />
-      <Events bundle={p.bundle} names={p.names} time={p.time} onDet={p.onDet} onSeek={p.onSeek} />
-      <Players bundle={p.bundle} onDet={p.onDet} />
+      <Players bundle={p.bundle} time={p.time} onDet={p.onDet} />
     </div>
   )
 }

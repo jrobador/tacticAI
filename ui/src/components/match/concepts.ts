@@ -94,14 +94,6 @@ export const CONCEPTS: Record<ConceptKey, Concept> = {
       'Minute: match clock over 90 minutes.',
     ],
   },
-  checked: {
-    term: 'Checked',
-    what: () => 'Every number on screen was written by code, not by the AI.',
-    how: () => [
-      "The check rejects a text with a digit or a number word outside a placeholder, a placeholder that is not one of the moment's metrics, or a claim such as “highest”, “first goal”, “equaliser” or “took the lead” that code did not compute.",
-      'A rejected text falls back to a template.',
-    ],
-  },
   phase: {
     term: 'Phase',
     what: () => 'What a team was doing over a stretch of play.',
@@ -134,8 +126,8 @@ export const CONCEPTS: Record<ConceptKey, Concept> = {
     term: 'Audience',
     what: () => 'Who the overlays and texts are made for.',
     how: () => [
-      ...(['analyst', 'fan', 'first_match', 'broadcast', 'one_metric'] as const).map((l) => `${AUDIENCE_NAME[l]}: ${AUDIENCE_RULE[l].line}`),
-      `Side adds ${CLUB_BONUS} to that team's moments and tells them from its side; Player focus adds ${PLAYER_BONUS} to moments with that player.`,
+      ...(['analyst', 'fan', 'broadcast'] as const).map((l) => `${AUDIENCE_NAME[l]}: ${AUDIENCE_RULE[l].line}`),
+      `In Fan, My club adds ${CLUB_BONUS} to that team's moments and tells them from its side; My player adds ${PLAYER_BONUS} to his moments and follows him on the video; My metric keeps only the moments of that metric.`,
     ],
   },
 }
@@ -199,13 +191,6 @@ export function conceptHere(key: ConceptKey, e: Env): Here {
       const f = mo.importance.factors
       add('Rarity', f.rarity.toFixed(2)); add('Value', f.value == null ? 'n/a' : f.value.toFixed(2)); add('Score context', f.score_context.toFixed(2)); add('Minute', f.minute.toFixed(2))
     }
-  } else if (key === 'checked') {
-    if (mo) {
-      add(lab(mo), `${(`${mo.text.fact} ${mo.text.why}`.match(/\{\w+/g) ?? []).length} placeholders filled by code`)
-      add('Text from', mo.text.source === 'agent' ? 'Agent' : 'Template')
-    }
-    const s = sources(e.moments)
-    add('This match', `${s.agent} agent ${s.agent === 1 ? 'text' : 'texts'} passed · ${s.tpl} template`)
   } else if (key === 'phase') {
     const id = mo?.refs.candidate_id
     const p = (id == null ? undefined : b.phases.find((x) => x.candidate_id === id)) ?? b.phases.find((x) => x.from_t_s <= time && time <= x.until_t_s) ?? b.phases[0]
@@ -225,8 +210,8 @@ export function conceptHere(key: ConceptKey, e: Env): Here {
     if (e.run?.plans) add('Overlay plans', counts(e.run.plans.agent, e.run.plans.fallback, 'Agent', 'Rules'))
   } else if (key === 'audience') {
     add(AUDIENCE_NAME[profile.lens], AUDIENCE_RULE[profile.lens].line)
-    if (profile.club !== 'neutral') add('Side', `${short(profile.club)} moments +${CLUB_BONUS}`)
-    if (profile.player) add('Player focus', `${name(profile.player)} moments +${PLAYER_BONUS}`)
+    if (profile.club !== 'neutral') add('My club', `${short(profile.club)} moments +${CLUB_BONUS}`)
+    if (profile.player) add('My player', `${name(profile.player)} moments +${PLAYER_BONUS}`)
     if (e.shown !== null) add('Shown now', `${e.shown} of ${e.moments.length} moments`)
     note = 'Switching audiences never calls a model: the agents run once per match, when it is analysed.'
   }

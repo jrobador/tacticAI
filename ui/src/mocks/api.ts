@@ -5,11 +5,11 @@
 import { ApiError } from '@/api/client'
 import type {
   ModelCard,
-  AskResponse, Catalog, ClipManifest, Club, CreateJobResult, Heatmaps, Insight, Lang, Lens, Recap, JobRequest, JobStatus, LibraryIndex, MatchBundle, MatchSummary, Recipe,
+  AskResponse, Catalog, Club, CreateJobResult, Heatmaps, Insight, Lang, Lens, Recap, JobRequest, JobStatus, LibraryIndex, MatchBundle, MatchSummary, Recipe,
   OverlayQuery, OverlaysResponse, RecipeIssue, ScenarioResponse, ValidateResponse,
 } from '@/api/types'
 import { TERMINAL_STATES } from '@/api/types'
-import { CLIPS, heatmaps, INSIGHTS, overlaysFor, recap } from './overlays'
+import { heatmaps, INSIGHTS, overlaysFor, recap } from './overlays'
 import { CATALOG, EXAMPLES, LIBRARY, MATCHES, MOCK_BUNDLE, MOCK_MATCH_ID } from './fixtures'
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -182,10 +182,6 @@ export async function getInsights(): Promise<Insight[]> {
 export async function getHeatmaps(): Promise<Heatmaps> {
   await delay(100)
   return heatmaps()
-}
-export async function getClipManifest(): Promise<ClipManifest> {
-  await delay(60)
-  return clone(CLIPS)
 }
 export async function getRecap(lens: Lens, lang: Lang, club: Club): Promise<Recap> {
   await delay(100)

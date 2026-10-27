@@ -11,9 +11,16 @@ export function fmtMetric(m: MetricValue): string {
 }
 export const unitLabel = (u: string) => ({ lines: 'lines', passes: 'passes', entries: 'entries', s: 'sec' })[u] ?? u
 
-/** Replaces {marker} with the formatted metric value; an unknown marker stays as it is. */
+/** {key} or the plural form {key|one|many}, as in src/tacticai/explain/domain/placeholders.py. */
+export const PLACEHOLDER = /\{(\w+)(?:\|([^|{}]*)\|([^|{}]*))?\}/g
+const fillOne = (m: string, k: string, one: string | undefined, many: string | undefined, metrics: Record<string, MetricValue>) => {
+  const v = metrics[k]
+  if (!v) return m
+  if (one !== undefined) return Math.round(v.value) === 1 ? one : (many ?? '')
+  return fmtMetric(v)
+}
 export const resolve = (text: string, metrics: Record<string, MetricValue>) =>
-  text.replace(/\{(\w+)\}/g, (m, k: string) => (metrics[k] ? fmtMetric(metrics[k]) : m))
+  text.replace(PLACEHOLDER, (m, k: string, one?: string, many?: string) => fillOne(m, k, one, many, metrics))
 
 const METRIC_LABELS: Record<string, string> = {
   lines_broken: 'Lines broken', passes: 'Passes', duration_s: 'Duration', xg: 'Shot quality',

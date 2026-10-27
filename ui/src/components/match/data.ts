@@ -1,7 +1,7 @@
 // Data hooks of the match page. All of it comes from the API or the match files; nothing is computed from samples.
 import { useEffect, useState } from 'react'
-import { getClipManifest, getHeatmaps, getInsights, getJob, getModels, getOverlays, getRecap, listMatches, loadMatch, matchFileUrl, MOCK } from '@/api/client'
-import type { ClipManifest, Insight, JobStatus, Lens, MatchBundle, MatchSummary, ModelCard, OverlaysResponse, Recap } from '@/api/types'
+import { getHeatmaps, getInsights, getJob, getModels, getOverlays, getRecap, listMatches, loadMatch, matchFileUrl, MOCK } from '@/api/client'
+import type { ReelManifest, Club, Insight, JobStatus, Lang, Lens, MatchBundle, MatchSummary, ModelCard, OverlaysResponse, Recap, Side } from '@/api/types'
 import type { Profile, TrackingFrame } from './model'
 
 /** The match package. `error` is set when a required file is missing. */
@@ -29,18 +29,16 @@ export function useOverlays(matchId: string, lens: Lens, p: Profile): OverlaysRe
   return res
 }
 
-/** explain/insights.jsonl and render/clips/manifest.json; they only exist once Explain and Render ran (`enabled`). */
+/** explain/insights.jsonl; it only exists once Explain ran (`enabled`). */
 export function useExplainFiles(matchId: string, enabled: boolean) {
   const [insights, setInsights] = useState<Insight[]>([])
-  const [manifest, setManifest] = useState<ClipManifest | null>(null)
   useEffect(() => {
     if (!enabled) return
     let live = true
     getInsights(matchId).then((r) => live && setInsights(r)).catch(() => {})
-    getClipManifest(matchId).then((r) => live && setManifest(r)).catch(() => {})
     return () => { live = false }
   }, [matchId, enabled])
-  return { insights, manifest }
+  return { insights }
 }
 
 /** personalize/variants/<lens>_<lang>_<club>.json: the text of every moment for the audience, language and side. */
@@ -72,6 +70,77 @@ export function useRecap(matchId: string, p: Profile, enabled: boolean) {
   }, [matchId, key, enabled, p.lens, p.lang, p.club])
   return { recap: state?.key === key ? state.recap : null, loading: state?.key !== key }
 }
+
+/** Who wrote a fan text: the Supporter agent (passed the contract and the Fan judge) or the fallback line of data. */
+type FanSource = 'agent' | 'fallback'
+/** What the reader feels about a moment (personalize/domain/fan_perspective.py). */
+export type FanStance = 'celebrate' | 'suffer' | 'anguish' | 'relief' | 'frustration' | 'blame_ours' | 'scare' | 'gloat' | 'taunt' | 'dominate'
+  | 'under_siege' | 'uplift' | 'worry' | 'show_off' | 'humiliation' | 'admire' | 'fear' | 'enjoy' | 'wary' | 'roar' | 'dismay' | 'thrill'
+/** One fact of the fan view. A "moment" holds the video; a "reaction" is a line of the live feed. */
+export interface FanMoment {
+  fact_id: string; kind: 'goal' | 'miss' | 'save' | 'mistake' | 'pinned' | 'turn' | 'move' | 'pass' | 'carry' | 'tackle' | 'sprint'
+  tier: 'moment' | 'reaction'; stance: FanStance
+  t_s: number; minute: number; team: Side; players: string[]; title: string; text: string; source: FanSource
+}
+export interface FanRating { player_id: string; name: string; team: Side; band: number; label: string; line: string; source: FanSource }
+export interface FanAward { award: 'engine' | 'fastest' | 'sprinter' | 'playmaker' | 'rocket'; title: string; player_id: string; name: string; team: Side; stat: string; line: string; source: FanSource }
+/** personalize/fan/<lang>_<club>.json: what a supporter reads. */
+export interface FanView {
+  lang: Lang; club: Club
+  /** Seconds a moment card stays on the video. */
+  card_s: number
+  moments: FanMoment[]
+  verdict: { headline: string; text: string; result: 'win' | 'loss' | 'draw' | 'decided'; winner: Side | null; deserved: boolean | null; source: FanSource }
+  ratings: FanRating[]
+  awards: FanAward[]
+  /** For a reader who follows a player: player_id -> fact_id -> his line about that moment. */
+  player_lines: Record<string, Record<string, string>>
+  ask_examples: string[]
+  sources: { agent: number; fallback: number; revised: number }
+}
+
+/** The fan view of the language and club; null while it loads or when the match has none (older matches). */
+export function useFanView(matchId: string, lang: Lang, club: Club, enabled: boolean): FanView | null {
+  const [state, setState] = useState<{ key: string; view: FanView | null } | null>(null)
+  const key = `${matchId}|${lang}|${club}`
+  useEffect(() => {
+    if (!enabled) return
+    let live = true
+    fileJson<FanView>(matchId, `personalize/fan/${lang}_${club}.json`).then((v) => live && setState({ key, view: v })).catch(() => live && setState({ key, view: null }))
+    return () => { live = false }
+  }, [matchId, key, lang, club, enabled])
+  return state?.key === key ? state.view : null
+}
+
+/** One broadcast graphic of render/broadcast/rundown.json: on air from t_in to t_out (video seconds) in its slot of the L-bar. */
+export interface BroadcastGraphic {
+  id: string; type: 'goal' | 'shot' | 'pass_quality' | 'carry' | 'player_id' | 'milestone'; slot: 'bar' | 'side'
+  t_in: number; t_out: number; clock_s: number | null; team: Side; player_id: string | null; data: Record<string, unknown>
+}
+export interface Rundown { rundown_version: number; match_id: string; graphics: BroadcastGraphic[] }
+/** personalize/studio/<lang>.json: what the studio presenter reads at full time, each segment linked to its play. */
+export interface StudioScript {
+  lang: Lang; opening: string; closing: string; source: 'agent' | 'mixed' | 'fallback'
+  segments: { fact_id: string; kind: string; t_s: number; minute: number; team: Side; text: string }[]
+}
+
+/** A match file that depends only on the key; null while it loads or when the match has none (older matches). */
+function useMatchFile<T>(matchId: string, name: string, enabled: boolean): T | null {
+  const [state, setState] = useState<{ key: string; v: T | null } | null>(null)
+  const key = `${matchId}|${name}`
+  useEffect(() => {
+    if (!enabled) return
+    let live = true
+    fileJson<T>(matchId, name).then((v) => live && setState({ key, v })).catch(() => live && setState({ key, v: null }))
+    return () => { live = false }
+  }, [matchId, name, key, enabled])
+  return state?.key === key ? state.v : null
+}
+export const useRundown = (matchId: string, enabled: boolean) => useMatchFile<Rundown>(matchId, 'render/broadcast/rundown.json', enabled)
+export const useReels = (matchId: string, enabled: boolean) => useMatchFile<ReelManifest>(matchId, 'render/reels/manifest.json', enabled)
+/** personalize/fan/facts.json: the match's verdict (verdict.figure is the star player). */
+export const useFanFacts = (matchId: string, enabled: boolean) => useMatchFile<{ verdict: { figure: string | null } }>(matchId, 'personalize/fan/facts.json', enabled)
+export const useStudio = (matchId: string, lang: Lang, enabled: boolean) => useMatchFile<StudioScript>(matchId, `personalize/studio/${lang}.json`, enabled)
 
 /** tracking.jsonl, once: the match clock of the score bug and the radar of the Stats tab. */
 export function useTracking(matchId: string): TrackingFrame[] {
@@ -115,7 +184,7 @@ export interface Split { agent: number; fallback: number; files: number }
 /** The files that tell how a match was made. Every part is null when its file is missing. */
 export interface RunInfo {
   job: JobStatus | null
-  interpretMeta: { weights?: { momentum?: Record<string, number> } } | null
+  interpretMeta: { weights?: { momentum?: Record<string, number> }; thresholds?: { sprint_speed_m_s?: number; sprint_min_s?: number } } | null
   explainMeta: { text_sources?: { agent?: number; template?: number } } | null
   tools: string[] | null
   sequences: number | null
@@ -163,11 +232,11 @@ export function useRunInfo(matchId: string, enabled: boolean): RunInfo | null {
       split(matchId, grid(TEXT_LENSES, (l, lang, c) => `personalize/recaps/${l}_${lang}_${c}.json`), (d) => (d.source === 'agent' ? [1, 0] : [0, 1])),
       split(matchId, PLAN_LENSES.flatMap((l) => ['neutral', 'home', 'away'].map((c) => `render/plans/${l}_${c}.json`)), (d) => (d.source === 'agent' ? [1, 0] : [0, 1])),
       getHeatmaps(matchId).catch(() => null),
-      getClipManifest(matchId).catch(() => null),
+      fileJson<ReelManifest>(matchId, 'render/reels/manifest.json'),
     ]).then(([job, interpretMeta, explainMeta, log, seqs, variants, recaps, plans, heat, clips]) => {
       if (!live) return
       const tools = log ? log.flatMap((l) => { try { return [(JSON.parse(l) as { tool: string }).tool] } catch { return [] } }) : null
-      setInfo({ job, interpretMeta, explainMeta, tools, sequences: seqs ? seqs.length : null, variants, recaps, plans, heatmaps: heat ? Object.keys(heat.players).length : null, clips: clips ? clips.clips.length : null })
+      setInfo({ job, interpretMeta, explainMeta, tools, sequences: seqs ? seqs.length : null, variants, recaps, plans, heatmaps: heat ? Object.keys(heat.players).length : null, clips: clips ? clips.reels.length : null })
     })
     return () => { live = false }
   }, [matchId, enabled, info])

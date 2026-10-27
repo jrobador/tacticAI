@@ -44,7 +44,7 @@ class ScenarioOutput(BaseModel):
 
 
 RULES = """You turn a football scenario request into a match recipe for a simulator, and you edit the current recipe when one is given.
-Teams: home = Brackenford Athletic (BKA), away = Wexmoor City (WXC). "Wexmoor attacks" means ball_owner away.
+Teams: home = Brackenford Athletic (BKA), away = Wexmoor City (WXC). "Brackenford", "BKA" and "the home side" mean home; "Wexmoor", "WXC" and "the away side" mean away. The team named as attacking (or named first in "X counter", "X down the right", "X build-up") is ball_owner: "Wexmoor attacks" and "WXC counter" mean ball_owner away.
 Use only the catalog below. Never invent options.
 
 Rules:
@@ -54,6 +54,8 @@ Rules:
 - seeds is 1..200: about 50 when the request asks for a shot, about 200 when it asks for a goal, 1 or a few otherwise.
 - situation.start is a short description. ends_when is one of the catalog values ("possession_change" if the request does not say otherwise).
 - wanted filters are ANDed: a seed wins only if it meets all of them. "X attacks and scores" is goal_by_team:<side of X>, never ends_in_goal (it would accept a rival goal). "X has a shot" is shot_by_team:<side>.
+- Never add ends_in_shot or shot_by_team next to a goal filter: a goal already includes its shot, and ends_in_shot would exclude a goal.
+- A request that describes a different play (another situation, or another attacking team) on top of a current recipe is a new play: set its template, ball_owner and wanted from the request instead of adding to the old wanted; keep formations, styles and levels.
 - goal_by:<full name> only for players in the catalog `players`; if the name is not there, leave it out and say so in the summary. Details such as a bicycle kick are not detected: say so in the summary.
 - more_pressure:<side> and more_possession:<side> only rank the seeds, they do not filter, but they ARE entries of situation.wanted: add them there whenever the request asks for more pressure or more possession (never only in the summary). A matching style (high_press, possession) may accompany them.
 - full_match has no wanted: requests such as a comeback, a goal at a given minute or a final score cannot be required. Return a full_match recipe and say in the summary that it cannot be demanded.
@@ -65,6 +67,9 @@ Rules:
 - summary: one or two English sentences for the UI, like "Wexmoor counter-attack (4-3-3, counter) against Brackenford; searching 200 seeds for a Wexmoor goal". Say what cannot be met.
 
 Examples (when a current recipe is given, change only what the request names):
+- "WXC counter, ends in a goal" -> template counter, ball_owner away, wanted ["goal_by_team:away"], seeds 200.
+- "BKA down the right, ends in a shot" -> template wing_attack_right, ball_owner home, wanted ["shot_by_team:home"], seeds 50.
+- "WXC counter, ends in a goal" on a recipe for a BKA attack down the right ending in a BKA shot -> a new play: template counter, ball_owner away, wanted ["goal_by_team:away"]; formations, styles and levels kept.
 - "more possession for Wexmoor" on a recipe whose wanted is ["goal_by_team:away"] -> wanted ["goal_by_team:away", "more_possession:away"], everything else identical.
 - "goal by Zzyzx" (not in players) -> no goal_by entry; the summary says the player does not exist in the catalog."""
 

@@ -16,7 +16,7 @@ export function Sidebar({ route, min, onToggle, matchesCount, busyLabel }: Props
   const justify = min ? 'justify-center' : 'justify-start'
   return (
     <aside
-      className="sticky top-0 z-40 flex h-screen flex-none flex-col gap-4 overflow-hidden border-r border-foreground/10 bg-sidebar px-3 pb-3.5 pt-[18px] transition-[width] duration-300 ease-out motion-reduce:transition-none"
+      className="sticky top-0 z-40 flex h-screen flex-none flex-col gap-4 overflow-hidden border-r border-foreground/10 bg-sidebar/60 backdrop-blur-md px-3 pb-3.5 pt-[18px] transition-[width] duration-300 ease-out motion-reduce:transition-none"
       style={{ width: min ? 64 : 232 }}
     >
       <div className="flex min-h-8 items-center justify-between gap-1.5">
@@ -30,7 +30,7 @@ export function Sidebar({ route, min, onToggle, matchesCount, busyLabel }: Props
       </div>
       <a
         href="#/" aria-label="New match" title="New match (N)" aria-current={isNew ? 'page' : undefined}
-        className={cn(row, justify, 'bg-foreground text-background hover:bg-white active:scale-[.98]', isNew && 'ring-2 ring-primary')}
+        className={cn(row, justify, 'bg-foreground text-background hover:bg-white active:scale-[.98]')}
       >
         <Plus className="size-[18px]" />
         {!min && <><span className="flex-1">New match</span><span className="font-mono text-[11px] font-semibold text-[#3a4456]">N</span></>}
@@ -53,11 +53,9 @@ export function Sidebar({ route, min, onToggle, matchesCount, busyLabel }: Props
       <a
         href="#/arch" aria-label="Architecture: built on Microsoft Foundry, Agent Framework, Azure Container Apps"
         title="Built on Microsoft Foundry · Agent Framework · Azure Container Apps"
-        className={cn(
-          'rounded-[10px] border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
-          route === 'arch' ? 'border-primary/50' : 'border-foreground/10',
-          min ? 'grid h-9 place-items-center font-mono text-[10px] font-semibold' : 'flex items-end gap-2 px-3 py-2.5 text-[11.5px] font-medium leading-normal',
-        )}
+        className={cn('rounded-[10px] border text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground',
+          route === 'arch' ? 'border-primary/60 text-foreground' : 'border-foreground/10',
+          min ? 'grid h-9 place-items-center font-mono text-[10px] font-semibold' : 'flex items-end gap-2 px-3 py-2.5 text-[11.5px] font-medium leading-normal')}
       >
         {min ? 'MS' : <><span className="flex-1">Built on Microsoft Foundry · Agent Framework · Azure Container Apps</span><span className="text-primary">→</span></>}
       </a>

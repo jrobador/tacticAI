@@ -310,12 +310,12 @@ ASK_DEADLINE_S, ASK_GUARD_S, ASK_PER_HOUR = 20, 25, 30
 _ask = {"busy_since": None, "token": None, "times": deque()}  # ponytail: per process, one replica; shared store if it scales
 
 
-def _ask_worker(token, match_id, question, lang):
+def _ask_worker(token, match_id, question, lang, fan_club=None):
     try:
         session = qa_tools.QASession(_read(match_id, "explain/insights.jsonl") or [], _read(match_id, "interpret/events_enriched.jsonl") or [])
         meta = _read(match_id, "meta.json") or {}
         context = {"teams": meta.get("teams"), "players": (_read(match_id, "roster.json") or {}).get("players", []), "max_tool_calls": session.max_tool_calls,
-                   "max_output_tokens": session.max_output_tokens, "deadline_s": ASK_DEADLINE_S}
+                   "max_output_tokens": session.max_output_tokens, "deadline_s": ASK_DEADLINE_S, **({"fan_club": fan_club} if fan_club else {})}
         out = qa_agent.answer_question(question, lang, session, context)
         return qa_tools.validate_answer(out, session, lang)
     finally:
@@ -333,6 +333,9 @@ async def ask(match_id: str, request: Request):
         return fail(422, "invalid question", [_issue("question", "must be 1 to 500 characters")])
     if lang not in LANGS:
         return fail(422, "invalid lang", [_issue("lang", f"must be one of {list(LANGS)}")])
+    fan_club = body.get("fan_club")  # set by the Fan mode: answer in a supporter's voice for that club
+    if fan_club is not None and fan_club not in CLUBS:
+        return fail(422, "invalid fan_club", [_issue("fan_club", f"must be one of {list(CLUBS)}")])
     if getattr(qa_agent.answer_question, "needs_foundry", False) and not foundry.configured():
         return fail(501, "the Q&A agent is not implemented")
     now = time.monotonic()
@@ -347,7 +350,7 @@ async def ask(match_id: str, request: Request):
     token = _ask["token"] = object()
     _ask["busy_since"] = now
     try:
-        result, errors = await asyncio.wait_for(asyncio.to_thread(_ask_worker, token, match_id, question, lang), ASK_DEADLINE_S)
+        result, errors = await asyncio.wait_for(asyncio.to_thread(_ask_worker, token, match_id, question, lang, fan_club), ASK_DEADLINE_S)
     except NotImplementedError:
         return fail(501, "the Q&A agent is not implemented")
     except asyncio.TimeoutError:

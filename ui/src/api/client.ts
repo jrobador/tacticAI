@@ -3,7 +3,7 @@
 import type {
   ModelCard,
   AgentsFile, AskResponse, Catalog, Club, CreateJobResult, EnrichedEvent, JobRequest, JobStatus, Lang, Lens, LibraryIndex, MatchBundle,
-  ClipManifest, Heatmaps, Insight, MatchMeta, MatchSummary, OverlayQuery, OverlaysResponse, PhaseCandidate, PlayerRow, QualityReport, Recap, Recipe, RecipeIssue, Roster, ScenarioResponse,
+  Heatmaps, Insight, MatchMeta, MatchSummary, OverlayQuery, OverlaysResponse, PhaseCandidate, PlayerRow, QualityReport, Recap, Recipe, RecipeIssue, Roster, ScenarioResponse,
   TacticalNote, TeamRow, TimelineWindow, ValidateResponse,
 } from './types'
 import { TERMINAL_STATES } from './types'
@@ -240,11 +240,6 @@ export async function getHeatmaps(matchId: string): Promise<Heatmaps | null> {
   const t = await fileText(matchId, 'render/heatmaps.json')
   return t ? (JSON.parse(t) as Heatmaps) : null
 }
-export async function getClipManifest(matchId: string): Promise<ClipManifest | null> {
-  if (MOCK) return (await mock()).getClipManifest()
-  const t = await fileText(matchId, 'render/clips/manifest.json')
-  return t ? (JSON.parse(t) as ClipManifest) : null
-}
 /** The recap of the text lens (analyst for broadcast and one_metric), language and club. */
 export async function getRecap(matchId: string, lens: Lens, lang: Lang, club: Club): Promise<Recap | null> {
   const textLens = lens === 'broadcast' || lens === 'one_metric' ? 'analyst' : lens
@@ -252,12 +247,12 @@ export async function getRecap(matchId: string, lens: Lens, lang: Lang, club: Cl
   const t = await fileText(matchId, `personalize/recaps/${textLens}_${lang}_${club}.json`)
   return t ? (JSON.parse(t) as Recap) : null
 }
-export const clipUrl = (matchId: string, insightId: string) => matchFileUrl(matchId, `render/clips/${insightId}.mp4`)
 
 /** Match Q&A. Errors: 429 (detail has retry_after_s in the body), 501 not available, 503 timeout, 502 invalid answer. */
-export async function askMatch(matchId: string, question: string, lang: Lang): Promise<AskResponse> {
+/** `fanClub` (Fan mode) asks for the answer in a supporter's voice for that club. */
+export async function askMatch(matchId: string, question: string, lang: Lang, fanClub?: string): Promise<AskResponse> {
   if (MOCK) return (await mock()).askMatch(question, lang)
-  const res = await request('POST', `/matches/${encodeURIComponent(matchId)}/ask`, { question, lang })
+  const res = await request('POST', `/matches/${encodeURIComponent(matchId)}/ask`, { question, lang, ...(fanClub ? { fan_club: fanClub } : {}) })
   if (res.ok) return res.json() as Promise<AskResponse>
   let body: { error?: string; retry_after_s?: number } = {}
   try { body = await res.clone().json() } catch { /* non-JSON */ }

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "tacticai"
 version = "0.1.0"
 requires-python = ">=3.10"
-dependencies = ["numpy>=2,<3", "pydantic>=2,<3"]
+dependencies = ["numpy>=2,<3", "pydantic>=2,<3", "pillow>=10.1"]
 
 [project.optional-dependencies]
 api = ["fastapi", "uvicorn[standard]", "python-dotenv", "pydantic>=2,<3", "azure-identity", "azure-mgmt-appcontainers", "mcp>=1.2,<2", "azure-monitor-opentelemetry==1.8.1"]

@@ -36,7 +36,11 @@ Answer format (strict; a program checks it):
 - Keep it short: 2 to 4 sentences. If nothing matches, say so briefly with no placeholders and no moments.
 """
 
-_LANG = {"en": "English", "es": "Spanish"}
+#: Fan mode (match_context["fan_club"] set): same tools and format rules, a supporter's voice instead of an analyst's.
+FAN_VOICE = """
+Voice: you are a passionate supporter answering a mate, not an analyst. {pov} Short, emotional, opinionated: praise our heroes, blame whoever gave it away, needle the rival; in Spanish Rioplatense football talk (voseo), in English match-thread tone. Never use analytics words (xG, expected goals, VAEP, goals added, index, possession share, momentum, metric, probability, line-breaking, pressure index): say it the way a fan would ("a clear chance", "he split their defence", "we were all over them"). The format rules above still hold."""
+
+_LANG = {"en": "English", "es": "Spanish (Rioplatense)"}
 
 
 class _Value(BaseModel):
@@ -73,6 +77,12 @@ def answer_question(question, lang, tools, match_context):
     if not foundry.configured():
         raise NotImplementedError("the Q&A agent needs FOUNDRY_*")
     instructions = INSTRUCTIONS.format(lang_name=_LANG[lang], max_calls=match_context["max_tool_calls"])
+    club = match_context.get("fan_club")
+    if club:
+        teams = match_context["teams"]
+        pov = "You have no side, but you live every moment." if club == "neutral" else \
+            f"You support {teams[club]['name']}: they are \"we\" / \"us\" (\"nosotros\"), {teams['away' if club == 'home' else 'home']['name']} are \"they\"."
+        instructions += FAN_VOICE.format(pov=pov)
     msg = json.dumps({"question": question, "reminder": "no digits or number words in the answer: counts only as {name} placeholders listed in values", "match": {"teams": match_context["teams"], "players": match_context["players"]}}, ensure_ascii=False)
     out = foundry.run(instructions, msg, tools=_serial([tools.search_moments, tools.search_events, tools.count_events]), response_format=Out,
                       timeout_s=15, max_tool_calls=match_context["max_tool_calls"], max_output_tokens=match_context["max_output_tokens"])

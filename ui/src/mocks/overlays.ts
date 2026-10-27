@@ -1,6 +1,6 @@
 // Fixtures for /overlays and explain/insights.jsonl, built from the spec example (match 20261023-235553-f205).
 // The other mock match (a3f1) has no Explain stage: it answers available: false.
-import type { Brand, BrandTokens, ClipManifest, Club, Heatmaps, Insight, Lang, Lens, Metric, MetricSeries, MetricValue, Overlay, OverlayQuery, OverlaysResponse, Recap } from '@/api/types'
+import type { Brand, BrandTokens, Club, Heatmaps, Insight, Lang, Lens, Metric, MetricSeries, MetricValue, Overlay, OverlayQuery, OverlaysResponse, Recap } from '@/api/types'
 import { resolve } from '@/lib/overlays'
 import { PLAYERS, ROSTER, TIMELINE } from './fixtures'
 
@@ -193,11 +193,6 @@ export function heatmaps(): Heatmaps {
     players[p.player_id] = { eligible_s: Math.round(total * 1000) / 1000, grid }
   }
   return { heatmap_version: 1, x_bins: 16, y_bins: 12, bounds: { x: [-54.4, 54.4], y: [-35.1, 35.1] }, unit: 's', players }
-}
-
-export const CLIPS: ClipManifest = {
-  clips: [{ insight_id: 'i002', file: 'i002.mp4', start_s: 18, end_s: 26.3 }],
-  errors: [],
 }
 
 export function recap(lens: Lens, lang: Lang, club: Club): Recap {

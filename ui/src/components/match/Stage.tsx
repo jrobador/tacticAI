@@ -1,10 +1,19 @@
-// The video with its score bug and overlay layers, the side-by-side panes and the controls row.
-import { useEffect, useRef, type ReactNode } from 'react'
+// The video with its score bug and overlay layers, and the controls row.
+import { useEffect, useState, type ReactNode } from 'react'
 import type { EnrichedEvent } from '@/api/types'
 import { eventTitle, mmss, type Names } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { PaneAnalyst, PaneBroadcast, PaneFan, type OvView } from './Overlays'
 import type { usePlayback } from './usePlayback'
+
+/** Seconds left of a hold, counting down from `s`. */
+export function Countdown({ s }: { s: number }) {
+  const [left, setLeft] = useState(s)
+  useEffect(() => {
+    const id = setInterval(() => setLeft((x) => Math.max(0, x - 1)), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return <span className="font-mono">{left}</span>
+}
 
 export type Playback = ReturnType<typeof usePlayback>
 const STRIPES = 'bg-[repeating-linear-gradient(135deg,#111D32_0_14px,#0E192C_14px_28px)]'
@@ -15,19 +24,13 @@ interface StageProps {
   short: Record<'home' | 'away', string>
   score: Record<'home' | 'away', number>
   clock: string
-  /** Side by side: the big video stays mounted (it is the clock) but out of sight. */
-  hidden: boolean
   children: ReactNode
 }
 
-export function VideoStage({ src, pb, short, score, clock, hidden, children }: StageProps) {
+export function VideoStage({ src, pb, short, score, clock, children }: StageProps) {
   return (
     <div
-      className={cn(
-        'relative aspect-video overflow-hidden rounded-[14px] border border-foreground/10 [container-type:inline-size]', STRIPES,
-        hidden && 'pointer-events-none absolute size-px opacity-0',
-      )}
-      style={hidden ? undefined : { width: 'min(100%, calc((100vh - 230px) * 16 / 9))', minWidth: 'min(100%, 520px)' }}
+      className={cn('relative aspect-video w-full overflow-hidden rounded-[14px] border border-foreground/10 [container-type:inline-size]', STRIPES)}
     >
       {pb.standIn ? (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-center">
@@ -37,7 +40,7 @@ export function VideoStage({ src, pb, short, score, clock, hidden, children }: S
       ) : (
         <video
           ref={pb.videoRef} src={src ?? undefined} muted loop autoPlay playsInline preload="auto" aria-label="Match video"
-          className="absolute inset-0 size-full object-cover"
+          className="absolute left-0 top-0 size-full object-cover"
           onLoadedData={() => pb.play(true)} onPlay={pb.onPlay} onPause={pb.onPause}
           onTimeUpdate={(e) => pb.onTimeUpdate(e.currentTarget.currentTime)} onError={pb.onError}
         />
@@ -51,49 +54,12 @@ export function VideoStage({ src, pb, short, score, clock, hidden, children }: S
           <span className={cn('size-[7px] rounded-full', pb.playing ? 'tai-pulse bg-primary' : 'bg-dim')} />{clock}
         </span>
       </div>
-      <div className="absolute inset-0 z-[2]">{children}</div>
+      {/* A click on the picture (not on an overlay card) plays or pauses. */}
+      <div className="absolute inset-0 z-[2] cursor-pointer" onClick={(e) => { if (e.target === e.currentTarget) pb.toggle() }}>{children}</div>
     </div>
   )
 }
 
-/** A pane video that follows the master clock (same time, muted). */
-function PaneVideo({ src, time, playing }: { src: string; time: number; playing: boolean }) {
-  const v = useRef<HTMLVideoElement>(null)
-  useEffect(() => {
-    const el = v.current
-    if (el && Math.abs(el.currentTime - time) > 0.3) el.currentTime = time
-  }, [time])
-  useEffect(() => {
-    if (playing) v.current?.play().catch(() => {})
-    else v.current?.pause()
-  }, [playing])
-  return <video ref={v} src={src} muted loop playsInline preload="auto" aria-hidden className="absolute inset-0 size-full object-cover" />
-}
-
-export interface Pane { views: OvView[]; on: Set<string> }
-export function SideBySide({ src, pb, panes, onOpen }: { src: string | null; pb: Playback; panes: Record<'analyst' | 'fan' | 'broadcast', Pane>; onOpen: (insightId: string) => void }) {
-  const cols = [
-    { id: 'analyst', name: 'Analyst', sub: 'up to 3 overlays', body: <PaneAnalyst {...panes.analyst} onOpen={onOpen} /> },
-    { id: 'fan', name: 'Fan', sub: 'one overlay', body: <PaneFan {...panes.fan} onOpen={onOpen} /> },
-    { id: 'broadcast', name: 'Broadcast', sub: 'on air from the queue', body: <PaneBroadcast {...panes.broadcast} onOpen={onOpen} /> },
-  ]
-  return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-2.5">
-      {cols.map((c) => (
-        <div key={c.id} className="flex flex-col gap-1.5">
-          <div className="flex items-baseline justify-between">
-            <span className="font-heading text-[15px] font-semibold">{c.name}</span>
-            <span className="text-[11px] font-medium text-dim">{c.sub}</span>
-          </div>
-          <div className={cn('relative aspect-video overflow-hidden rounded-xl border border-foreground/10', STRIPES)}>
-            {src && !pb.standIn && <PaneVideo src={src} time={pb.time} playing={pb.playing} />}
-            {c.body}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 interface ControlsProps {
   pb: Playback
@@ -114,7 +80,6 @@ export function Controls({ pb, duration, events, names, focusId, onSeek }: Contr
       >
         {pb.playing ? '❚❚' : '▶'}
       </button>
-      <span className="min-w-24 flex-none font-mono text-xs font-medium text-muted-foreground">clip {mmss(pb.time)} / {mmss(duration)}</span>
       <div
         className="relative h-7 flex-1 cursor-pointer" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onSeek(((e.clientX - r.left) / r.width) * duration) }}
       >

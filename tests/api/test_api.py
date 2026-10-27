@@ -137,14 +137,15 @@ def test_overlays_es_uses_decimal_comma(client):
 
 def test_render_assets_are_served_with_range(client):
     d = enriched_match()
-    os.makedirs(os.path.join(d, "render", "clips"))
-    for n, body in (("heatmaps.json", b"{}"), ("clips/manifest.json", b"{}"), ("clips/i002.mp4", b"0123456789")):
+    os.makedirs(os.path.join(d, "render", "reels", "en"))
+    for n, body in (("heatmaps.json", b"{}"), ("thumb.jpg", b"jpeg"), ("reels/manifest.json", b"{}"), ("reels/en/g019.mp4", b"0123456789")):
         open(os.path.join(d, "render", n), "wb").write(body)
     base = "/matches/20261024-000000-aaaa/files/render/"
-    assert client.get(base + "heatmaps.json").status_code == 200 and client.get(base + "clips/manifest.json").status_code == 200
-    r = client.get(base + "clips/i002.mp4", headers={"Range": "bytes=2-4"})
+    assert client.get(base + "heatmaps.json").status_code == 200 and client.get(base + "reels/manifest.json").status_code == 200
+    assert client.get(base + "thumb.jpg").headers["content-type"] == "image/jpeg"
+    r = client.get(base + "reels/en/g019.mp4", headers={"Range": "bytes=2-4"})
     assert (r.status_code, r.content, r.headers["content-type"]) == (206, b"234", "video/mp4")
-    assert client.get(base + "clips/i2.mp4").status_code == 404
+    assert client.get(base + "reels/en/g2.mp4").status_code == 404
 
 
 def test_overlays_errors(client):
@@ -393,6 +394,19 @@ def test_ask_happy_path(client, ask_match, monkeypatch):
     assert r.json()["values"] == {"n": 1}
     assert r.json()["moments"] == [{"kind": "event", "event_index": 0, "t_s": 24.3, "clock_s": 314.0, "period": 1}]
     assert api._ask["busy_since"] is None
+
+
+def test_ask_fan_voice_reaches_the_agent(client, ask_match, monkeypatch):
+    seen = {}
+
+    def agent(question, lang, tools, ctx):
+        seen["club"] = ctx.get("fan_club")
+        return good_agent(question, lang, tools, ctx)
+    real_agent(monkeypatch, agent)
+    post = lambda club: client.post(f"/matches/{ask_match}/ask", json={"question": "every goal", "lang": "en", "fan_club": club})
+    assert post("visitors").status_code == 422
+    assert post("home").status_code == 200 and seen["club"] == "home"
+    assert ask(client, ask_match).status_code == 200 and seen["club"] is None  # analyst: no fan voice
 
 
 def test_ask_502_on_reference_no_tool_returned(client, ask_match, monkeypatch):

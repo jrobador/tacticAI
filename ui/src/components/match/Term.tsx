@@ -19,15 +19,3 @@ export function Term({ k, children, className }: { k: ConceptKey; children: Reac
   )
 }
 
-/** The lime tick with "Checked": every number on screen was written by code. */
-export function CheckedBadge({ size = 14, className, dark }: { size?: number; className?: string; dark?: boolean }) {
-  return (
-    <Term k="checked" className={cn('flex items-center gap-[5px] text-[11.5px] font-semibold no-underline', dark ? 'text-background' : 'text-primary', className)}>
-      <span
-        className={cn('grid place-items-center rounded-full text-[9px] font-bold', dark ? 'bg-background text-primary' : 'bg-primary text-primary-foreground')}
-        style={{ width: size, height: size }}
-      >✓</span>
-      <span className="underline decoration-dotted underline-offset-[3px]">Checked</span>
-    </Term>
-  )
-}

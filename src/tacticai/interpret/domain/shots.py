@@ -2,7 +2,7 @@
 Owners follow the ingest rules (infer_owner raw touch, stable_owners for is_pass); the labels never read ingest events."""
 import math
 
-from ...ingest.domain.events import DEFAULTS, NOT_SHOT_STATES, POST_M, infer_owner, is_pass, kick_at, speed, stable_owners
+from ...ingest.domain.events import DEFAULTS, NOT_SHOT_STATES, POST_M, infer_owner, is_pass, kick_at, owners_of, speed
 
 MIN_SPEED, LOOKAHEAD_S, HALF_G = 10.0, 3.0, 4.905
 BOX_DEPTH_M, BOX_HALF_W_M, CROSSBAR_M = 16.5, 20.16, 2.44
@@ -67,7 +67,7 @@ def kick_candidates(rows, roster, meta, th, events=None, raw=None):
     half, pitch = meta["pitch"]["length_m"] / 2, (meta["pitch"]["length_m"] / 2, meta["pitch"]["width_m"] / 2)
     info = {p["player_id"]: p for p in roster["players"]}
     raw = raw or [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows]
-    owners = stable_owners(raw, th["owner_min_frames"])
+    owners = owners_of(rows, raw, th)
     shots = [(e["team"], e["frame_index"]) for e in events or [] if e["type"] == "shot"]
     last, who, touch, change_t, res = {"home": -10**9, "away": -10**9}, {}, None, rows[0]["t_s"] if rows else 0, []
     for i, r in enumerate(rows):

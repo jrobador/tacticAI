@@ -34,7 +34,7 @@ def test_possession_events():
     rows += [fr(9, ("home", 4), score=(1, 0)),                              # goal
              fr(10, state="corner", score=(1, 0), pos={("home", 5): (0.0, 0.0)}),  # corner starts (break)
              fr(11, state="corner", score=(1, 0), pos={("home", 5): (0.0, 0.0)})]  # pass across the break is suppressed
-    ev = extract(rows, dict(DEFAULTS, owner_min_frames=1))
+    ev = extract(rows, dict(DEFAULTS, owner_min_frames=1, carry_min_m=100))  # carries have their own test
     kinds = [(e["type"], e.get("outcome")) for e in ev]
     assert kinds == [("pass", "complete"), ("pass", "intercepted"), ("tackle", None), ("goal", None),
                      ("set_piece", None)], kinds
@@ -107,6 +107,25 @@ def test_one_touch_shooter_survives_stabilization():
     shot, goal = [e for e in ev if e["type"] == "shot"], [e for e in ev if e["type"] == "goal"]
     assert len(shot) == 1 and shot[0]["player_id"] == "home-01" and shot[0]["outcome"] == "goal"
     assert goal[0]["scorer_id"] == "home-01"
+
+
+def test_first_time_touch_is_a_reception():
+    # home-01 holds it, passes; home-02 touches it for one frame and strikes it (the ball leaves faster than it came)
+    rows = [fr(i, ("home", 1)) for i in range(3)] + [fr(3, ball=(5.0, 0), v=(10.0, 0)), fr(4, ("home", 2), ball=(10.0, 0), v=(10.0, 0)),
+                                                       fr(5, ball=(13.0, 0), v=(27.0, 0))]
+    ev = extract(rows, dict(DEFAULTS, owner_min_frames=3))
+    (p,) = [e for e in ev if e["type"] == "pass"]
+    assert (p["player_id"], p["to_player_id"], p["outcome"]) == ("home-01", "home-02", "complete")
+    # the same one-frame touch without a strike is a flicker, not a reception
+    rows[5] = fr(5, ball=(11.0, 0), v=(10.0, 0))
+    assert [e for e in extract(rows, dict(DEFAULTS, owner_min_frames=3)) if e["type"] == "pass"] == []
+
+
+def test_carry_when_the_owner_moves_the_ball_far_enough():
+    run = [fr(i, ("home", 1), ball=(float(i), 0.0)) for i in range(8)]  # home-01 runs 7 m with the ball
+    (c,) = [e for e in extract(run, dict(DEFAULTS, owner_min_frames=1)) if e["type"] == "carry"]
+    assert (c["player_id"], c["distance_m"], c["frame_index"]) == ("home-01", 7.0, 0)
+    assert [e for e in extract(run[:4], dict(DEFAULTS, owner_min_frames=1)) if e["type"] == "carry"] == []  # 3 m is a touch
 
 
 def test_goal_scorer_falls_back_to_goal_shot_when_keeper_touched_last():

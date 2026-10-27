@@ -11,11 +11,11 @@ MATCH_FILES = ("meta.json", "roster.json", "events.jsonl", "tracking.jsonl", "vi
                "interpret/tactical_notes.jsonl", "interpret/phases.jsonl", "interpret/agents.json")
 _V = r"(analyst|fan|first_match)_(en|es)_(neutral|home|away)"
 _P = r"(analyst|fan|first_match|broadcast)_(neutral|home|away)"
-MATCH_PATTERNS = (r"explain/insights\.jsonl", r"explain/meta\.json", rf"personalize/variants/{_V}\.json", rf"personalize/recaps/{_V}\.json",
-                  rf"render/plans/{_P}\.json", r"render/heatmaps\.json", r"render/clips/manifest\.json", r"render/clips/i\d{3}\.mp4")
+MATCH_PATTERNS = (r"explain/insights\.jsonl", r"explain/meta\.json", rf"personalize/variants/{_V}\.json", rf"personalize/recaps/{_V}\.json", r"personalize/fan/facts\.json", r"personalize/fan/(en|es)_(neutral|home|away)\.json",
+                  rf"render/plans/{_P}\.json", r"render/heatmaps\.json", r"render/thumb\.jpg", r"render/broadcast/rundown\.json", r"personalize/studio/(en|es)\.json", r"render/reels/manifest\.json", r"render/reels/(en|es)/g\d+\.mp4")
 LIBRARY_FILES = tuple(f for f in MATCH_FILES if f != "video.mp4") + ("recipe.json",)
 ENTRY_ID_RE = re.compile(r"^[a-z_]+-(home|away)-(goal|shot)-\d{2}$")
-MEDIA = {".json": "application/json", ".jsonl": "application/x-ndjson", ".mp4": "video/mp4"}
+MEDIA = {".json": "application/json", ".jsonl": "application/x-ndjson", ".mp4": "video/mp4", ".jpg": "image/jpeg"}
 
 
 def roots():

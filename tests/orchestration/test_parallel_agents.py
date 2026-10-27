@@ -30,7 +30,8 @@ def enrich(tmp, name, monkeypatch, director_error=None):
     shutil.copytree(FIX, d)
     monkeypatch.setattr(pipeline, "explain_run", lambda m: B.run(m, context={}))
     monkeypatch.setattr(pipeline, "heatmaps_run", lambda m: None)
-    monkeypatch.setattr(pipeline, "clips_run", lambda m, video=None: [])
+    monkeypatch.setattr(pipeline, "reels_run", lambda m, video=None: [])
+    monkeypatch.setattr(pipeline, "rundown_run", lambda m: [])  # the fixture has no tracking.jsonl
     monkeypatch.setattr(lens_agent, "adapt_texts", slow())
     monkeypatch.setattr(recap_agent, "write_recaps", slow())
     monkeypatch.setattr(director_agent, "plan_all", slow(error=director_error))

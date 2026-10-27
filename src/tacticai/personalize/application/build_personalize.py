@@ -3,7 +3,7 @@ import os
 
 from ...explain.application.build_insights import build_match_context
 from ...core.files import read_json, read_jsonl
-from . import lens_agent as lens_mod, recap_agent as recap_mod, recaps, translator_agent as translator_mod, variants
+from . import fan, lens_agent as lens_mod, recap_agent as recap_mod, recaps, studio, translator_agent as translator_mod, variants
 
 
 def _ask(fn, what, fallback, warnings, *args):
@@ -20,9 +20,10 @@ def _ask(fn, what, fallback, warnings, *args):
         return {}
 
 
-def run(match_dir, lens_agent=None, recap_agent=None, translator=None, context=None):
+def run(match_dir, lens_agent=None, recap_agent=None, translator=None, context=None, supporter_agent=None):
     """-> warnings (list of str) for the job message. `lens_agent` / `recap_agent` / `translator` are optional replacements of adapt_texts / write_recaps / translate (tests).
-    Order: Lens call, Recap call, Translator call, then the 18 variants and 18 recaps are assembled and written."""
+    Order: Lens call, Recap call, Translator call, then the 18 variants and 18 recaps are assembled and written; last, the fan view
+    (facts detected by code, written by the Supporter agent). `supporter_agent` replaces supporter_agent.write (tests)."""
     insights = read_jsonl(os.path.join(match_dir, "explain", "insights.jsonl"))
     meta = read_json(os.path.join(match_dir, "meta.json"))
     names = {t: meta["teams"][t]["name"] for t in ("home", "away")}
@@ -45,4 +46,6 @@ def run(match_dir, lens_agent=None, recap_agent=None, translator=None, context=N
     rs = recaps.build_all(insights, vs, {"en": en_recaps, "es": es_recaps})
     variants.write_all(match_dir, vs)
     recaps.write_all(match_dir, rs)
+    warnings += fan.run(match_dir, supporter_agent)
+    warnings += studio.run(match_dir)
     return warnings

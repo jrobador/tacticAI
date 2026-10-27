@@ -66,7 +66,7 @@ export function useNewMatch(deps: Deps) {
 
   const send = (text: string) => {
     const t = text.trim()
-    if (t && !msgsRef.current.some((m) => m.kind === 'writing')) void draft(t, true)
+    if (t && !isRunning(gen) && !msgsRef.current.some((m) => m.kind === 'writing')) void draft(t, true)
   }
 
   const setChip = (msgId: number, key: string, val: string) => {

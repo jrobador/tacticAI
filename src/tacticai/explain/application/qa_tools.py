@@ -4,7 +4,7 @@ every call and what it returned, so `validate_answer` can check the agent's answ
 from ..domain import placeholders
 
 KINDS = ("lines_broken", "pressure_spell", "goal_or_chance", "momentum_shift")
-TYPES = ("pass", "shot", "goal", "tackle", "set_piece", "interception")
+TYPES = ("pass", "shot", "goal", "tackle", "set_piece", "interception", "carry")
 TEAMS = ("home", "away")
 OUTCOMES = ("complete", "intercepted", "goal", "no_goal")
 MAX_TOOL_CALLS = 6

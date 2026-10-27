@@ -22,8 +22,15 @@ export interface Gen {
 }
 
 export interface Opt { value: string; label: string; sub?: string }
+export type Group = 'play' | 'home' | 'away' | 'mode'
 export interface Chip {
   key: string
+  group: Group
+  /** Word before the chip in the play sentence ("started by", "ends in", "for", "by", "and"), or a label like "Level". */
+  pre?: string
+  /** Side whose crest shows inside the chip. */
+  crest?: Side
+  /** Field name used in "Updated: field → value" notes. */
   k: string
   v: string
   cur: string
@@ -42,14 +49,14 @@ export function chipsOf(r: Recipe, cat: Catalog, teams: Teams): Chip[] {
   for (const s of SIDES) {
     const sh = teams[s].short
     chips.push(
-      { key: `${s}f`, k: sh, v: r[s].formation, cur: r[s].formation, opts: cat.formations.map((f) => ({ value: f, label: f })), set: (x, v) => { x[s].formation = v } },
-      { key: `${s}s`, k: `${sh} style`, v: label(r[s].style), cur: r[s].style, opts: cat.styles.map((v) => ({ value: v, label: label(v) })), set: (x, v) => { x[s].style = v } },
-      { key: `${s}l`, k: `${sh} level`, v: r[s].level.toFixed(2), cur: r[s].level.toFixed(2), opts: levels, set: (x, v) => { x[s].level = Number(v) } },
+      { key: `${s}f`, group: s, k: `${sh} formation`, v: r[s].formation, cur: r[s].formation, opts: cat.formations.map((f) => ({ value: f, label: f })), set: (x, v) => { x[s].formation = v } },
+      { key: `${s}s`, group: s, k: `${sh} style`, v: label(r[s].style), cur: r[s].style, opts: cat.styles.map((v) => ({ value: v, label: label(v) })), set: (x, v) => { x[s].style = v } },
+      { key: `${s}l`, group: s, pre: 'Level', k: `${sh} level`, v: r[s].level.toFixed(2), cur: r[s].level.toFixed(2), opts: levels, set: (x, v) => { x[s].level = Number(v) } },
     )
   }
   chips.push({
-    key: 'mode', k: 'Mode', v: r.mode === 'full_match' ? 'Full match' : 'Situation', cur: r.mode,
-    opts: [{ value: 'situation', label: 'Situation' }, { value: 'full_match', label: 'Full match', sub: 'Takes about 11 minutes' }],
+    key: 'mode', group: 'mode', k: 'Mode', v: r.mode === 'full_match' ? 'Full match' : 'Situation', cur: r.mode,
+    opts: [{ value: 'situation', label: 'Situation' }, { value: 'full_match', label: 'Full match', sub: 'Can take up to 20 minutes' }],
     set: (x, v) => {
       x.mode = v as Recipe['mode']
       if (v === 'full_match') { x.situation = null; x.steps = 3000 } else { x.situation = x.situation ?? defaultSituation(cat); x.steps = cat.limits.steps_situation }
@@ -60,18 +67,18 @@ export function chipsOf(r: Recipe, cat: Catalog, teams: Teams): Chip[] {
   const tpl = sit.template ?? 'custom'
   chips.push(
     {
-      key: 'sit', k: 'Situation', v: sit.template ? label(sit.template) : 'Custom positions', cur: tpl,
+      key: 'sit', group: 'play', k: 'Situation', v: sit.template ? label(sit.template) : 'Custom positions', cur: tpl,
       opts: [...(sit.template ? [] : [{ value: 'custom', label: 'Custom positions' }]), ...cat.templates.map((t) => ({ value: t, label: label(t) }))],
       set: (x, v) => { const s = x.situation!; if (v === 'custom') return; s.template = v; s.positions = null; s.ball = null; s.ball_owner = s.ball_owner ?? 'home' },
     },
-    { key: 'ball', k: 'Ball', v: teams[sit.ball_owner ?? 'home'].short, cur: sit.ball_owner ?? 'home', opts: sideOpts, set: (x, v) => { x.situation!.ball_owner = v as Side } },
+    { key: 'ball', group: 'play', pre: 'started by', crest: sit.ball_owner ?? 'home', k: 'Ball', v: teams[sit.ball_owner ?? 'home'].short, cur: sit.ball_owner ?? 'home', opts: sideOpts, set: (x, v) => { x.situation!.ball_owner = v as Side } },
   )
   const wanted = sit.wanted.length ? sit.wanted : ['']
   wanted.forEach((p, i) => {
     const [name, arg] = p.split(':')
     const spec = cat.wanted.find((w) => w.name === name)
     chips.push({
-      key: `want${i}`, k: 'Want', v: name ? label(name) : 'Anything', cur: name,
+      key: `want${i}`, group: 'play', pre: i === 0 ? 'ends in' : 'and', k: 'Want', v: name ? label(name) : 'Anything', cur: name,
       opts: [...(wanted.length === 1 ? [{ value: '', label: 'Anything', sub: 'No condition' }] : []), ...cat.wanted.map((w) => ({ value: w.name, label: label(w.name), sub: w.description }))],
       set: (x, v) => {
         const w = x.situation!.wanted
@@ -82,10 +89,10 @@ export function chipsOf(r: Recipe, cat: Catalog, teams: Teams): Chip[] {
       },
     })
     if (spec?.takes === 'side') {
-      chips.push({ key: `want${i}t`, k: 'Team', v: teams[(arg as Side) ?? 'home']?.short ?? arg, cur: arg, opts: sideOpts, set: (x, v) => { x.situation!.wanted[i] = `${name}:${v}` } })
+      chips.push({ key: `want${i}t`, group: 'play', pre: 'for', crest: (arg as Side) ?? 'home', k: 'Team', v: teams[(arg as Side) ?? 'home']?.short ?? arg, cur: arg, opts: sideOpts, set: (x, v) => { x.situation!.wanted[i] = `${name}:${v}` } })
     } else if (spec?.takes === 'player') {
       chips.push({
-        key: `want${i}p`, k: 'Player', v: arg, cur: arg,
+        key: `want${i}p`, group: 'play', pre: 'by', k: 'Player', v: arg, cur: arg,
         opts: cat.players.map((q) => ({ value: q.name, label: q.name, sub: `${teams[q.team].short} #${q.number}` })),
         set: (x, v) => { x.situation!.wanted[i] = `${name}:${v}` },
       })
@@ -94,12 +101,19 @@ export function chipsOf(r: Recipe, cat: Catalog, teams: Teams): Chip[] {
   return chips
 }
 
+const SIT: Record<string, string> = { counter: 'Counter-attack', build_up: 'Build-up', wing_attack_left: 'Attack down the left', wing_attack_right: 'Attack down the right' }
+const sitLabel = (t: string | null) => (t ? (SIT[t] ?? label(t)) : 'Custom situation')
+
+/** "Counter-attack · BKA goal": situation, then the team with the ball and the result wanted. */
+export function playTitle(template: string | null, owner: Side, wanted: string | undefined, teams: Teams): string {
+  const res = !wanted ? 'attack' : wanted.startsWith('goal') ? 'goal' : 'shot'
+  return `${sitLabel(template)} · ${teams[owner].short} ${res}`
+}
+
 export function titleOf(r: Recipe, teams: Teams): string {
   if (r.mode === 'full_match' || !r.situation) return `Full match · ${teams.home.short} vs ${teams.away.short}`
   const s = r.situation
-  const w = s.wanted[0]
-  const res = !w ? 'attack' : w.startsWith('goal') ? 'goal' : 'shot'
-  return `${s.template ? label(s.template) : 'Custom situation'} · ${teams[s.ball_owner ?? 'home'].short} ${res}`
+  return playTitle(s.template, s.ball_owner ?? 'home', s.wanted[0], teams)
 }
 
 /** "Updated: BKA style → High press · Want → Goal by team." Empty when nothing differs. */
@@ -155,7 +169,8 @@ export function stageRows(s: JobStatus | null, now: number): Row[] {
       if (active && s?.progress) seed = `seed ${s.progress.done} of ${s.progress.total}`
       else if (s?.search) seed = `${s.search.met} of ${s.search.seeds} seeds matched`
     }
-    const word = rowState === 'failed' ? 'Failed' : rowState === 'done' ? (i === 8 ? '' : 'Done') : rowState === 'active' ? (state === 'queued' ? 'Queued' : 'Running') : ''
-    return { label: text, state: rowState, secs, total, seed, word }
+    const word = rowState === 'failed' ? 'Failed' : rowState === 'done' ? (i === 8 ? '' : 'Done') : rowState === 'active' ? (state === 'queued' ? '' : 'Running') : ''
+    // Queued means the job container is still booting (docker/Container Apps start, imports): say so instead of "Queued".
+    return { label: i === 0 && state === 'queued' ? 'Starting the engine…' : text, state: rowState, secs, total, seed, word }
   })
 }

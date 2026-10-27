@@ -46,11 +46,13 @@ export function eventTitle(e: EnrichedEvent, names: Names): string {
       return `${who} passes${e.to_player_id ? ` to ${nameOf(names, e.to_player_id)}` : ''}`
     case 'set_piece':
       return label(e.kind ?? 'Set piece')
+    case 'carry':
+      return `${who} runs ${Math.round(e.distance_m ?? 0)} m with the ball`
   }
 }
 
 export type EventKind = 'goal' | 'shot' | 'tackle' | 'pass'
-export const eventKind = (e: EnrichedEvent): EventKind => (e.type === 'set_piece' ? 'pass' : e.type)
+export const eventKind = (e: EnrichedEvent): EventKind => (e.type === 'set_piece' || e.type === 'carry' ? 'pass' : e.type)
 
 /** Tactical-note kinds that stay hidden until the momentum curve is reviewed against a video. */
 const HIDDEN_NOTES = new Set(['momentum_swing', 'dominance_spell'])

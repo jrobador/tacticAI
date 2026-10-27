@@ -2,7 +2,7 @@
 import math
 
 from ...ingest.domain.contract import team_of
-from ...ingest.domain.events import DEFAULTS, infer_owner, stable_owners
+from ...ingest.domain.events import DEFAULTS, infer_owner, owners_of
 from .frame import opponent, third, x_att
 from .physical import is_open
 from .relative import flag_runs
@@ -22,7 +22,7 @@ def pressure_on(row, player_id):
 
 def owners_for(rows, th=DEFAULTS, raw=None):
     """Stable owners aligned with rows: (team, player_id) or None. Same construction as ingest/domain/events.extract; raw: precomputed infer_owner per row."""
-    return stable_owners(raw or [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows], th["owner_min_frames"])
+    return owners_of(rows, raw or [infer_owner(r, th["owner_radius_m"], th["owner_max_z_m"]) for r in rows], th)
 
 
 def team_pressure(rows, owners, team, t0=None, t1=None):

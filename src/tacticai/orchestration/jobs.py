@@ -3,6 +3,8 @@ import json
 import os
 import re
 import secrets
+import subprocess
+import sys
 import tempfile
 import time
 from datetime import datetime, timedelta, timezone
@@ -113,3 +115,20 @@ def active():
             if status and not is_terminal(status):
                 return status
     return None
+
+
+def start(job_id=None):
+    """The container entry: runs the given (or first queued) job in its own process, so a crash still marks it failed.
+    Lives here, not in pipeline, so the launcher does not pay the pipeline's imports twice."""
+    if job_id is None:
+        root = os.path.join(data_dir(), "jobs")
+        ids = sorted(os.listdir(root)) if os.path.isdir(root) else []
+        queued = [j for j in ids if JOB_ID_RE.match(j) and (read(j) or {}).get("state") == "queued"]
+        if not queued:
+            return 0
+        job_id = queued[0]
+    code = subprocess.call([sys.executable, "-m", "tacticai.orchestration", "run", job_id])
+    status = read(job_id)
+    if code != 0 and status and not is_terminal(status):
+        write(job_id, state="failed", message=f"the process exited with code {code}")
+    return code

@@ -10,6 +10,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
 from . import jobs
+from .jobs import start  # noqa: F401  (python -m tacticai.orchestration start)
 from .library import MODELS, library_dir, read_index, refresh_match_files, update_index
 from ..ingest.application.generate_match import generate_from_recipe
 from ..ingest.application.search import search
@@ -22,8 +23,10 @@ from ..interpret.application.analyze_match import analyze
 from ..interpret.application.models import load_vaep, load_xg
 from ..personalize.application import lens_agent, recap_agent, recaps
 from ..personalize.application.build_personalize import run as personalize_run
-from ..render.application.clips import run as clips_run
+from ..render.application.reels import run as reels_run
 from ..render.application.heatmaps import run as heatmaps_run
+from ..render.application.rundown import run as rundown_run
+from ..render.application.thumb import run as thumb_run
 from ..render.application import director_agent
 from ..render.application.plans import director_inputs, run as plans_run
 
@@ -59,8 +62,8 @@ def _start_agents(pool, match_dir):
 
 def enrich_steps(match_dir, set_state, video=None):
     """explaining -> personalizing -> directing -> rendering_assets on a match folder. Deterministic: an exception propagates, except
-    clip failures (they go to render/clips/manifest.json and the warnings). set_state(state, progress=None); each step ends with done == total.
-    video: path of video.mp4 when it is not inside match_dir. Returns the warnings (LLM fallbacks, clip failures)."""
+    reel failures (they go to render/reels/manifest.json and the warnings). set_state(state, progress=None); each step ends with done == total.
+    video: path of video.mp4 when it is not inside match_dir. Returns the warnings (LLM fallbacks, reel failures)."""
     set_state("explaining", {"done": 0, "total": 1})
     warnings = list(explain_run(match_dir)[1])
     set_state("explaining", {"done": 1, "total": 1})
@@ -72,10 +75,12 @@ def enrich_steps(match_dir, set_state, video=None):
         set_state("directing", {"done": 0, "total": 12})
         warnings += plans_run(match_dir, **plans_kw)
         set_state("directing", {"done": 12, "total": 12})
-    set_state("rendering_assets", {"done": 0, "total": 2})  # heatmaps, clips
+    set_state("rendering_assets", {"done": 0, "total": 2})  # heatmaps, reels
     heatmaps_run(match_dir)
     set_state("rendering_assets", {"done": 1, "total": 2})
-    warnings += clips_run(match_dir, video)
+    warnings += thumb_run(match_dir, video)
+    warnings += rundown_run(match_dir)
+    warnings += reels_run(match_dir, video)  # after the rundown: the reels are its goals and shots
     set_state("rendering_assets", {"done": 2, "total": 2})
     return warnings
 
@@ -286,21 +291,6 @@ def run(job_id):
         traceback.print_exc()
         jobs.write(job_id, state="failed", message=str(err))
         return 1
-
-
-def start(job_id=None):
-    if job_id is None:
-        root = os.path.join(jobs.data_dir(), "jobs")
-        ids = sorted(os.listdir(root)) if os.path.isdir(root) else []
-        queued = [j for j in ids if jobs.JOB_ID_RE.match(j) and (jobs.read(j) or {}).get("state") == "queued"]
-        if not queued:
-            return 0
-        job_id = queued[0]
-    code = subprocess.call([sys.executable, "-m", "tacticai.orchestration", "run", job_id])
-    status = jobs.read(job_id)
-    if code != 0 and status and not jobs.is_terminal(status):
-        jobs.write(job_id, state="failed", message=f"the process exited with code {code}")
-    return code
 
 
 def main(argv=None):

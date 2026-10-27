@@ -29,7 +29,7 @@ function Shell() {
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [matchesData, setMatchesData] = useState<MatchesData | null>(null)
   const [matchesError, setMatchesError] = useState<string | null>(null)
-  const [navMin, setNavMin] = useState(false)
+  const [navMin, setNavMin] = useState(true)
 
   const [, a, id] = path.split('/')
   const onMatch = a === 'matches' && !!id
@@ -40,8 +40,6 @@ function Shell() {
     return () => window.removeEventListener('hashchange', on)
   }, [])
 
-  // The match page opens with the sidebar collapsed; every other route expands it.
-  useEffect(() => setNavMin(onMatch), [onMatch])
 
   // Typing N outside an input starts a new match.
   useEffect(() => {
@@ -81,20 +79,20 @@ function Shell() {
 
   let screen
   if (a === 'matches' && !id) {
-    screen = <Matches data={matchesData} error={matchesError} />
+    screen = <Matches data={matchesData} error={matchesError} catalog={catalog} />
   } else if (a === 'arch') {
     screen = <Architecture />
   } else if (!onMatch) {
     screen = (
       <NewMatch nm={nm} catalog={catalog} catalogError={catalogError} retryCatalog={loadCatalog} teams={teams}
-        namedTeams={!!matchesData?.matches.length} entries={matchesData?.entries ?? []} />
+        namedTeams={!!matchesData?.matches.length} entries={matchesData?.entries ?? []} heroMatchId={matchesData?.matches[0]?.match_id ?? null} />
     )
   } else {
     screen = <Match key={id} matchId={id} />
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" style={{ "--nav-w": `${navMin ? 64 : 232}px` } as React.CSSProperties}>
       <Sidebar route={a ?? ''} min={navMin} onToggle={() => setNavMin((v) => !v)} matchesCount={matchesCount} busyLabel={busyLabel} />
       <main className="flex min-w-0 flex-1 flex-col">{screen}</main>
     </div>
