@@ -26,7 +26,8 @@ export interface StatsTabProps {
 }
 
 const INK = '#F0F0F0'
-const SLATE = '#6B7A94'
+/** Club colours, as in Broadcast: BKA orange, WXC teal. */
+const CLUB = { home: '#F26B1D', away: '#19A79E' } as const
 const sgn = (v: number, d: number) => `${v < 0 ? '−' : '+'}${Math.abs(v).toFixed(d)}`
 const head = 'font-mono text-[10.5px] font-medium uppercase tracking-[.06em] text-dim'
 const monoNote = 'font-mono text-[11px] font-medium text-dim'
@@ -102,7 +103,7 @@ function Momentum({ bundle, time }: { bundle: MatchBundle; time: number }) {
           <span key={x.window} className="relative h-full" title={`Window ${i + 1}: ${sgn(x.momentum, 2)}`}>
             <span
               className="absolute inset-x-0 rounded-[1px]"
-              style={{ top: x.momentum >= 0 ? `${50 - x.momentum * 50}%` : '50%', height: `${Math.abs(x.momentum) * 50}%`, background: x.momentum >= 0 ? INK : SLATE, opacity: i === idx ? 1 : 0.6 }}
+              style={{ top: x.momentum >= 0 ? `${50 - x.momentum * 50}%` : '50%', height: `${Math.abs(x.momentum) * 50}%`, background: x.momentum >= 0 ? CLUB.home : CLUB.away, opacity: i === idx ? 1 : 0.6 }}
             />
           </span>
         ))}
@@ -152,7 +153,7 @@ function Players({ bundle, time, onDet }: { bundle: MatchBundle; time: number; o
               <span className="text-[13px] font-semibold">{r?.name ?? p.player_id}</span>
               <span className="text-[10.5px] text-dim">{bundle.meta.teams[p.team].short}{r ? ` · #${r.number} · ${r.role}` : ''}</span>
             </span>
-            <span className="h-[5px] overflow-hidden rounded-[3px] bg-[#1f2b40]"><span className="block h-full transition-[width] duration-500" style={{ width: `${(Math.abs(v) / maxAbs) * 100}%`, background: v > 0 ? '#C6F432' : '#7D838D' }} /></span>
+            <span className="h-[5px] overflow-hidden rounded-[3px] bg-[#1f2b40]"><span className="block h-full transition-[width] duration-500" style={{ width: `${(Math.abs(v) / maxAbs) * 100}%`, background: CLUB[p.team], opacity: v > 0 ? 1 : 0.45 }} /></span>
             <span className={cn('text-right font-heading text-sm font-semibold', v > 0 ? 'text-primary' : 'text-muted-foreground')}>{sgn(v, 3)}</span>
           </button>
         )

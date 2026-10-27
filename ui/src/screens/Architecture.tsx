@@ -11,7 +11,7 @@ const FACTS: [string, string][] = [
   ['22 players + ball', 'Positions of everyone on the pitch, 10 frames per second, the format of a real tracking feed.'],
   ['Video and tracking', 'One run gives both.'],
   ['104 situations', 'Counters, build-ups and wing attacks already recorded, ready to watch.'],
-  ['Plays on request', 'Formations, style, level and the result you want; the engine searches its runs until one produces it.'],
+  ['Plays on request', 'Formations, style, level and the result you want, typed or spoken; the engine searches its runs until one produces it.'],
 ]
 
 /** Public Premier League ranges next to our engine. */
@@ -30,23 +30,24 @@ const MODELS: { id: ModelId; name: string; line: string; baseL: string; noun: st
 type Chip = ['a' | 'c', string]
 interface Stage { id: string; name: string; line: string; chips: Chip[]; tech: string; text: string[]; tools?: string; techLong: string }
 const FLOW: Stage[] = [
-  { id: 'source', name: 'Source', line: 'Writes the setup and records the match.', chips: [['a', 'Scenario Agent'], ['c', 'engine search'], ['c', 'record 10 fps']], tech: 'Container Apps Job · Foundry',
-    text: ['Scenario Agent receives the request and the current setup and returns a setup with a short summary; code validates it.', 'The engine searches for a run that produces the play and records video and tracking at 10 frames per second. While it records, a live preview shows the match as it is drawn.'],
-    techLong: 'Azure Container Apps Job runs the engine.' },
+  { id: 'source', name: 'Source', line: 'Writes the setup and records the match.', chips: [['c', 'speech to text'], ['a', 'Scenario Agent'], ['c', 'library lookup'], ['c', 'engine search'], ['c', 'record 10 fps']], tech: 'Container Apps Job · Foundry · AI Speech',
+    text: ['The request can be spoken: the browser transcribes it with Azure AI Speech (English and Spanish are detected automatically) using a short-lived token the API issues, so the key never reaches the browser.', 'Scenario Agent receives the request and the current setup and returns a setup with a short summary; code validates it.', 'Code first looks for an exact match of the setup in the pre-generated library and, if it finds one, renders that entry instead of searching.', 'Otherwise the engine searches seeds in batches, each with a fresh process pool to bound memory, and stops once 3 seeds meet every condition (unless the setup only ranks seeds). It records video and tracking at 10 frames per second. While it records, a live preview shows the match as it is drawn.'],
+    techLong: 'Azure Container Apps Job runs the engine; Azure AI Speech transcribes the spoken request.' },
   { id: 'interpret', name: 'Interpret', line: 'Finds the events and what matters.', chips: [['c', 'infer events'], ['c', 'score'], ['a', 'Tactical Analyst'], ['c', 'detect moments']], tech: 'Foundry · Agent Framework',
-    text: ['Code infers events from positions and the models score them.', 'Tactical Analyst calls the analysis tools and returns the phases and notes that matter, ranked, with values as placeholders.', 'Code validates them and detects the moments.'],
+    text: ['Code infers events from positions (passes, tackles, shots, goals, carries, including one-touch receptions and carries) and the models score them.', 'Tactical Analyst calls the analysis tools and returns the phases and notes that matter, ranked, with values as placeholders.', 'Code validates them and detects the moments.'],
     tools: 'xg_v1 · xpass_v1 · vaep_v1 · match_context · tactical_evidence · team_shape · pressing_profile · compare_metrics · possession_analysis · player_profile', techLong: 'Agents run on Microsoft Foundry.' },
   { id: 'explain', name: 'Explain', line: 'Writes the fact and the why.', chips: [['a', 'Explainer'], ['a', 'Causal Judge'], ['c', 'fill numbers']], tech: 'Foundry · Agent Framework',
     text: ['Explainer receives every moment with its metrics and returns the fact and the why, with placeholders for the numbers.', 'Causal Judge reads the Tactical Analyst and Explainer texts with their data and rejects any text that claims a cause the data does not show; it fails closed.', 'Code fills in the numbers and checks the text.'],
     techLong: 'Agents run on Microsoft Foundry.' },
-  { id: 'personalize', name: 'Personalize', line: 'One text per audience, side and language.', chips: [['a', 'Lens'], ['a', 'Recap'], ['a', 'Translator'], ['a', 'Supporter Agent'], ['a', 'Fan Judge'], ['c', 'numbers survive']], tech: 'Foundry · Agent Framework',
-    text: ['Lens writes a title and text for each of three audiences.', 'Recap writes a 3–5 sentence recap for each audience and side.', 'Translator turns the English texts and recaps into Spanish.',
+  { id: 'personalize', name: 'Personalize', line: 'One text per audience, side and language.', chips: [['a', 'Lens Agent'], ['a', 'Recap Agent'], ['a', 'Translator'], ['a', 'Supporter Agent'], ['a', 'Fan Judge'], ['a', 'Studio Script Agent'], ['c', 'numbers survive']], tech: 'Foundry · Agent Framework',
+    text: ['Lens Agent writes a title and text for each audience.', 'Recap Agent writes a 3–5 sentence recap for each audience and side.', 'Translator turns the English texts and recaps into Spanish.',
       "For the fan, code detects what a supporter lives and decides what each club's supporter feels about every moment. Supporter Agent writes it in that supporter's voice, per language and club, with a line per moment for whoever follows one player.",
       "Fan Judge checks every fan text against one rubric: the language, the reader's side, facts only, a supporter's voice. A rejected text goes back once with the reasons; if it fails again, a line of data replaces it.",
+      'Studio Script Agent writes the full-time presenter script in English and Spanish: an opening, three to five segments that each cue the replay of one play, and a closing. Code validates every line.',
       'Code checks that every number survives.'],
     techLong: 'Agents run on Microsoft Foundry.' },
-  { id: 'render', name: 'Render', line: 'Plans the overlays.', chips: [['a', 'Director'], ['c', 'validate plan']], tech: 'Foundry · Agent Framework',
-    text: ['Director returns the overlay plan for each audience and side: which moments, which slot, for how long.', 'Code validates every plan and falls back to rules.'], techLong: 'Agents run on Microsoft Foundry.' },
+  { id: 'render', name: 'Render', line: 'Plans the overlays and the broadcast.', chips: [['a', 'Director'], ['c', 'validate plan'], ['c', 'rundown'], ['c', 'reels']], tech: 'Foundry · Agent Framework',
+    text: ['Director returns the overlay plan for each audience and side: which moments, which slot, for how long.', 'Code validates every plan and falls back to rules.', 'Code builds the broadcast rundown, a timed machine-readable list of on-screen graphics (goal, shot, pass quality, carry, milestone, player ID), and cuts 9:16 reels of goals and shots with the lower-third burned in, in English and Spanish, with ffmpeg and Pillow.'], techLong: 'Agents run on Microsoft Foundry.' },
 ]
 const ASK: Stage = { id: 'ask', name: 'Ask', line: 'Answers a question about the match.', chips: [['a', 'Match Q&A'], ['c', 'check answer']], tech: 'Foundry · Container Apps',
   text: ['Match Q&A answers a question by calling search tools over the match; code checks the answer against the tool results.'], tools: 'search_moments · search_events · count_events', techLong: 'Agents run on Microsoft Foundry.' }
@@ -258,7 +259,7 @@ export function Architecture() {
         <Note>The percentage is how often the model ranks a positive case above a negative one (AUC), measured on matches it never saw. Trained on our engine, so these numbers are not calibrated to real football.</Note>
       </Section>
 
-      <Section n="03" title="From a request to a match you can watch" lead="You do two things: create a match and watch it. Everything in between runs on its own. Agents run on Microsoft Foundry, and code checks everything they write.">
+      <Section n="03" title="From a request to a match you can watch" lead="You do two things: create a match and watch it. Everything in between runs on its own. Twelve agents run on Microsoft Foundry. Code computes the facts, an agent writes, code checks the contract (placeholders, claims, names), a judge agent reviews, a rejected text gets one revision, and whatever still fails falls back item by item.">
         <Panel className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-x-[22px] gap-y-2.5 text-[12px] text-muted-foreground">
             <span className="flex items-center gap-2"><AgentChip c={['a', 'Agent']} />writes</span>
@@ -325,7 +326,7 @@ export function Architecture() {
               ['left-[33%] top-[5.77%] w-[30%] h-[17.31%]', 'Azure Container Apps', 'The always-on API with the built UI', false],
               ['left-[33%] top-[33.65%] w-[30%] h-[17.31%]', 'Azure Files', 'The shared data folder both read and write', false],
               ['left-[33%] top-[61.54%] w-[30%] h-[17.31%]', 'Container Apps Job', 'The engine and the pipeline, one run per match', false],
-              ['left-[77%] top-[33.65%] w-[21%] h-[17.31%]', 'Microsoft Foundry', 'The models behind the agents', true],
+              ['left-[77%] top-[33.65%] w-[21%] h-[17.31%]', 'Microsoft Foundry · AI Speech', 'The models behind the agents, and speech-to-text', true],
               ['left-[2%] top-[87.69%] w-[47%] h-[10.77%]', 'Log Analytics · Application Insights', 'Logs and telemetry', false],
               ['left-[51%] top-[87.69%] w-[47%] h-[10.77%]', 'Cost Management budget', 'Spend alerts', false],
             ] as const).map(([pos, name, what, lime]) => (

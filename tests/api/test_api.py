@@ -268,6 +268,18 @@ def test_library_post_twice_returns_same_match(client):
     assert client.get(f"/library/{entry_id}/files/video.mp4").status_code == 404
 
 
+def test_recipe_equal_to_a_library_entry_creates_a_library_job(client):
+    team = {"formation": "4-4-2", "style": "balanced", "level": 1.0}
+    bl.update_index(bl.library_dir(), lambda i: i["entries"].append(
+        {"entry_id": "counter-home-goal-01", "template": "counter", "ball_owner": "home", "wanted": ["goal_by_team:home"],
+         "home": team, "away": team, "match_id": None}))
+    r = client.post("/jobs", json={"recipe": RECIPE})
+    assert r.status_code == 202 and r.json()["from_library"] == "counter-home-goal-01"
+    assert jobs.read(r.json()["job_id"])["kind"] == "library"
+    other = {**RECIPE, "situation": {**RECIPE["situation"], "ball_owner": "away", "wanted": ["goal_by_team:away"]}}
+    assert "from_library" not in client.post("/jobs", json={"recipe": other}).json()
+
+
 def test_library_empty_and_bad_bodies(client):
     assert client.get("/library").json()["entries"] == []
     assert client.post("/jobs", json={}).status_code == 422

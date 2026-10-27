@@ -54,6 +54,20 @@ def library_dir():
     return os.path.abspath(os.path.join(root, "library"))
 
 
+def find_entry(entries, recipe):
+    """First entry (by entry_id) whose template, ball_owner, wanted set and both teams equal this situation recipe's."""
+    if recipe.get("mode") != "situation":
+        return None
+    sit = recipe["situation"]
+    team = lambda t: (t["formation"], t["style"], float(t["level"]))
+    for e in sorted(entries, key=lambda e: e["entry_id"]):
+        if (e.get("template") == sit["template"] and e.get("ball_owner") == sit["ball_owner"]
+                and set(e.get("wanted", [])) == set(sit["wanted"])
+                and team(e["home"]) == team(recipe["home"]) and team(e["away"]) == team(recipe["away"])):
+            return e
+    return None
+
+
 def _git_head():
     """Recorded only (resume never checks it): TAI_CODE_VERSION, else git rev-parse, else None."""
     if os.environ.get("TAI_CODE_VERSION"):

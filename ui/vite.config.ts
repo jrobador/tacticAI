@@ -17,6 +17,7 @@ export default defineConfig({
       '/matches': API,
       '/library': API,
       '/models': API,
+      '/speech': API,
       '/ws': { target: API, ws: true },
     },
   },

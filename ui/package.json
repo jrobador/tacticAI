@@ -15,6 +15,7 @@
     "@fontsource-variable/inter": "^5.3.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
+    "microsoft-cognitiveservices-speech-sdk": "1.53.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwind-merge": "^3.3.1"

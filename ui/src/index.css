@@ -74,8 +74,13 @@ h1, h2, h3, .font-heading { font-family: var(--font-heading); letter-spacing: -0
 .rise { animation: rise 450ms ease-out both; }
 @keyframes tai-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .tai-pulse { animation: tai-pulse 1.2s ease-in-out infinite; }
+/* "The agent is working": three dots that fill in turn, and a lime sweep under the active step. */
+@keyframes tai-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75%, 100% { content: '...'; } }
+.tai-dots::after { content: '...'; display: inline-block; width: 1.2em; animation: tai-dots 1.2s steps(1) infinite; }
+@keyframes tai-sweep { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.tai-sweep { animation: tai-sweep 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .tai-pulse { animation: none; }
+  .tai-pulse, .tai-dots::after, .tai-sweep { animation: none; }
   .ov-in-left, .ov-in-right, .rise { animation: fade-in 200ms linear both; }
   .ov-out { animation: fade-out 200ms linear both; }
 }

@@ -2,11 +2,44 @@ import { useEffect, useState } from 'react'
 import { previewUrl } from '@/api/client'
 import type { JobStatus } from '@/api/types'
 import { mmss } from '@/lib/format'
-import { stageRows, type Row } from '@/lib/newMatch'
+import { STAGES, stageRows, type Row } from '@/lib/newMatch'
 import { cn } from '@/lib/utils'
 
 const ICON: Record<Row['state'], string> = { todo: '○', active: '●', done: '✓', failed: '✕' }
 const timeText = (r: Row) => (r.secs === null ? '' : `${mmss(r.secs)}${r.total ? ' total' : ''}`)
+
+/** Who works in each step and on what ("Who · what"), shown in turn under the active step. The status only says
+ *  which step runs, so these lines name the step's real agents and models, without a made-up progress number. */
+const ACTIVITY: Partial<Record<string, string[]>> = {
+  analyzing: ['xG model · scoring every shot', 'xPass model · rating every pass', 'Goals-added model · valuing every action', 'Tracking · finding pressure spells and broken lines'],
+  agents: ['Tactical Analyst · reading the possession phases', 'Tactical Analyst · calling the tactics tools', 'Tactical Analyst · writing the tactical notes'],
+  explaining: ['Explainer · writing why each moment matters', 'Causal Judge · checking every claim against the data', 'Explainer · revising what the judge flagged'],
+  personalizing: ['Lens Agent · rewording each moment per audience', 'Supporter Agent · writing for each club’s fans', 'Fan Judge · checking stance, language and facts',
+    'Translator · English and Spanish', 'Recap Agent · picking the top moments', 'Studio Script Agent · drafting the presenter’s script'],
+  directing: ['Director · deciding which graphic airs when', 'Director · planning the overlays per audience'],
+  rendering_assets: ['Heatmaps · drawing every player', 'Broadcast · timing the on-air graphics', 'Reels · cutting 9:16 clips of goals and shots'],
+}
+
+function Activity({ stage, small }: { stage: string; small?: boolean }) {
+  const lines = ACTIVITY[stage]
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    setI(0)
+    if (!lines) return
+    const t = setInterval(() => setI((n) => n + 1), 2400)
+    return () => clearInterval(t)
+  }, [lines])
+  if (!lines) return null
+  const [who, what] = lines[i % lines.length].split(' · ')
+  return (
+    <span className="flex flex-col gap-1">
+      <span key={i} className={cn('fade-in truncate font-mono text-muted-foreground', small ? 'text-[10px]' : 'text-[11.5px]')}>
+        <span className="text-primary">{who}</span>{what && ` · ${what}`}<span className="tai-dots" />
+      </span>
+      <span className="relative h-px w-full overflow-hidden bg-foreground/10"><span className="tai-sweep absolute inset-y-0 left-0 w-2/5 bg-primary/70" /></span>
+    </span>
+  )
+}
 
 /** Ticks while `on`, so elapsed times move. */
 function useNow(on: boolean) {
@@ -65,12 +98,13 @@ export function GenCard({ jobId, title, status, error }: { jobId: string; title:
           </div>
           {error && <p className="text-xs text-muted-foreground" role="status">Connection problem: {error}. Retrying.</p>}
           <div className="flex flex-col">
-            {rows.map((r) => (
+            {rows.map((r, i) => (
               <div key={r.label} className={cn('-mx-2 grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg px-2 py-2 transition-colors duration-300', r.state === 'active' && 'bg-primary/[.06]')}>
                 <span className={cn('text-center text-xs font-bold', r.state === 'todo' ? 'text-[#4a5263]' : r.state === 'failed' ? 'text-foreground' : 'text-primary', r.state === 'active' && 'tai-pulse')}>{ICON[r.state]}</span>
                 <span className="flex flex-col gap-px">
                   <span className={cn('text-[14.5px] font-medium', r.state === 'todo' && 'text-dim')}>{r.label}</span>
                   {r.seed && <span className="font-mono text-[11.5px] text-muted-foreground">{r.seed}</span>}
+                  {r.state === 'active' && <Activity stage={STAGES[i][0]} />}
                 </span>
                 <span className="flex items-baseline gap-2">
                   <span className="text-[10.5px] font-medium text-dim">{r.word}</span>
@@ -103,11 +137,12 @@ export function GenCard({ jobId, title, status, error }: { jobId: string; title:
           <span className="text-xs font-semibold">Progress</span>
           <span className="font-mono text-[11px] text-muted-foreground">{elapsed}</span>
         </div>
-        {rows.map((r) => (
-          <div key={r.label} className="grid grid-cols-[14px_minmax(0,1fr)_auto] items-center gap-[7px] py-0.5">
+        {rows.map((r, i) => (
+          <div key={r.label} className="grid grid-cols-[14px_minmax(0,1fr)_auto] items-center gap-x-[7px] gap-y-1 py-0.5">
             <span className={cn('text-center text-[10px] font-bold', r.state === 'todo' ? 'text-[#4a5263]' : 'text-primary', r.state === 'active' && 'tai-pulse')}>{ICON[r.state]}</span>
             <span className={cn('truncate text-[11.5px] font-medium', r.state === 'todo' && 'text-dim')}>{r.label}</span>
             <span className="font-mono text-[10.5px] text-muted-foreground">{timeText(r)}</span>
+            {r.state === 'active' && <span className="col-span-2 col-start-2 min-w-0"><Activity stage={STAGES[i][0]} small /></span>}
           </div>
         ))}
       </div>

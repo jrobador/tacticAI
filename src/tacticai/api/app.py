@@ -21,7 +21,8 @@ from ..orchestration import jobs
 from ..explain.application import qa_agent, qa_tools
 from ..ingest.application import scenario_agent
 from ..ingest.application.catalog import RecipeShape, _issue, catalog, check_recipe
-from ..orchestration.library import library_dir, read_index
+from ..ingest.domain.recipe import from_dict, to_dict
+from ..orchestration.library import find_entry, library_dir, read_index
 from ..personalize.domain.lenses import CLUBS, LANGS, LENSES
 from ..render.domain import director
 from . import files
@@ -56,6 +57,11 @@ def require_key(x_access_key: str | None = Header(None)):
     key = os.environ.get("TAI_ACCESS_KEY")
     if key and not (x_access_key and hmac.compare_digest(x_access_key.encode(), key.encode())):
         raise HTTPException(401, "this action needs the access key")
+
+
+# Speech tokens spend the Foundry resource: same access key as /scenario and /jobs. Included before the UI mount below.
+from .speech import router as speech_router  # noqa: E402
+app.include_router(speech_router, dependencies=[Depends(require_key)])
 
 
 async def body_of(request):
@@ -115,23 +121,27 @@ async def create_job(request: Request):
     body = await body_of(request)
     if ("recipe" in body) == ("library_id" in body):
         return fail(422, "send exactly one of recipe or library_id")
+    via = None  # entry_id when a recipe was served from the library
     if "recipe" in body:
         errors = check_recipe(body["recipe"])
         if errors:
             return fail(422, "invalid recipe", errors)
-        req = {"recipe": body["recipe"]}
+        # library first: an exact situation match reuses the prebuilt entry instead of searching seeds
+        entry = find_entry(read_index(library_dir())["entries"], to_dict(from_dict(body["recipe"])))
+        req, via = {"recipe": body["recipe"]}, entry and entry["entry_id"]
     else:
         wanted = body["library_id"]
         entry = next((e for e in read_index(library_dir())["entries"] if e["entry_id"] == wanted), None)
         if entry is None:
             return fail(422, "unknown library_id", [_issue("library_id", "not in the library")])
+    if entry:
         if entry.get("match_id"):
-            return JSONResponse({"match_id": entry["match_id"]}, status_code=200)
+            return JSONResponse({"match_id": entry["match_id"], **({"from_library": via} if via else {})}, status_code=200)
         req = {"library_id": entry["entry_id"]}
-    return await asyncio.to_thread(_start_job, req)
+    return await asyncio.to_thread(_start_job, req, via)
 
 
-def _start_job(req):
+def _start_job(req, from_library=None):
     """Blocking critical section (disk + launcher): runs in a worker thread, never on the event loop."""
     with LOCK:
         active = jobs.active()
@@ -142,7 +152,7 @@ def _start_job(req):
             launcher.launch(job_id)
         except Exception as err:
             jobs.write(job_id, state="failed", message=f"could not start the job: {err}")
-    return JSONResponse({"job_id": job_id}, status_code=202)
+    return JSONResponse({"job_id": job_id, **({"from_library": from_library} if from_library else {})}, status_code=202)
 
 
 @app.get("/jobs/{job_id}")

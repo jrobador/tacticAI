@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronDown, TriangleAlert } from 'lucide-react'
+import { ChevronDown, Mic, MicOff, TriangleAlert } from 'lucide-react'
 import { ApiError, activeJobId, createJob, MOCK } from '@/api/client'
 import type { Catalog, LibraryEntry } from '@/api/types'
 import { GenCard } from '@/components/GenCard'
@@ -10,6 +10,7 @@ import { chipsOf, titleOf, type Chip, type Msg, type Teams } from '@/lib/newMatc
 import { go, matchesPreset } from '@/lib/nav'
 import { CardButton, entryCard } from '@/screens/Matches'
 import { cn } from '@/lib/utils'
+import { useSpeech } from '@/lib/useSpeech'
 import { CREST } from '@/lib/format'
 
 interface Props {
@@ -67,6 +68,14 @@ export function NewMatch({ nm, catalog, catalogError, retryCatalog, teams, named
   const locked = writing || isRunning(gen)
   const send = (text: string) => { if (!text.trim() || locked) return; nm.send(text); setPrompt('') ; setMenu(null) }
   const onKey = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(prompt) } }
+  // The spoken text lands in the box; the user reads it and sends it (Enter or the send button).
+  const speech = useSpeech(setPrompt, setPrompt)
+  const micBtn = (size: number) => (
+    <button type="button" onClick={() => void speech.toggle()} disabled={locked && !speech.listening} aria-label={speech.listening ? 'Stop' : 'Speak your match'} aria-pressed={speech.listening}
+      className={cn('grid flex-none place-items-center rounded-full border border-foreground/20 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40', speech.listening && 'tai-pulse border-primary bg-primary text-primary-foreground hover:text-primary-foreground')}
+      style={{ width: size, height: size }}>{speech.listening ? <MicOff aria-hidden className="size-1/2" /> : <Mic aria-hidden className="size-1/2" />}</button>
+  )
+  const speechError = speech.error && <p role="alert" className="text-[12.5px] text-muted-foreground">{speech.error}</p>
   const sendBtn = (size: number) => (
     <button type="button" onClick={() => send(prompt)} aria-label="Send to the Scenario Agent" disabled={!prompt.trim() || locked}
       className={cn('grid flex-none place-items-center rounded-full font-bold transition-[background,transform] active:scale-95', prompt.trim() && !locked ? 'bg-primary text-primary-foreground' : 'bg-[#2a3650] text-dim')}
@@ -125,10 +134,12 @@ export function NewMatch({ nm, catalog, catalogError, retryCatalog, teams, named
             <p className="mx-auto -mt-2 max-w-[640px] text-pretty text-center text-[17px] leading-relaxed text-muted-foreground [text-shadow:0_1px_10px_rgba(0,0,0,.7)]">Prompt a play, check the setup, and the engine records the video, tracking and events. The agents explain each moment.</p>
             <div className="flex items-end gap-3 rounded-[20px] border border-foreground/20 bg-panel py-5 pl-6 pr-4 shadow-[0_18px_50px_rgba(0,0,0,.35)] focus-within:border-primary">
               <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={onKey} rows={3} aria-label="Describe the play you want"
-                placeholder={`Describe a play, e.g. ${examples[0].text}`}
+                placeholder={speech.listening ? 'Listening…' : `Describe a play, e.g. ${examples[0].text}`}
                 className="flex-1 resize-none bg-transparent py-0.5 text-[20px] leading-normal outline-none placeholder:text-dim" />
+              {micBtn(52)}
               {sendBtn(52)}
             </div>
+            {speechError}
             <div className="flex flex-wrap justify-center gap-2 [text-shadow:0_1px_8px_rgba(0,0,0,.6)]">
               {examples.map((x) => (
                 <button key={x.text} type="button" onClick={() => send(x.text)} className="flex items-center gap-2 whitespace-nowrap rounded-full border border-foreground/20 bg-background/60 py-1.5 pl-2 pr-3 text-[13px] font-medium text-muted-foreground hover:border-foreground/45 hover:text-foreground">
@@ -187,9 +198,11 @@ export function NewMatch({ nm, catalog, catalogError, retryCatalog, teams, named
             </div>
             <div className={cn('flex items-end gap-2.5 rounded-2xl border border-foreground/15 bg-panel py-2.5 pl-4 pr-2.5 shadow-[0_-8px_30px_rgba(0,0,0,.25)]', locked && 'opacity-60')}>
               <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={onKey} rows={1} aria-label="Refine the setup" disabled={locked}
-                placeholder={isRunning(gen) ? 'Generating the match. You can write again when it is done.' : 'Refine the setup, or ask for another play'} className="flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-normal outline-none placeholder:text-dim disabled:cursor-not-allowed" />
+                placeholder={speech.listening ? 'Listening…' : isRunning(gen) ? 'Generating the match. You can write again when it is done.' : 'Refine the setup, or ask for another play'} className="flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-normal outline-none placeholder:text-dim disabled:cursor-not-allowed" />
+              {micBtn(38)}
               {sendBtn(38)}
             </div>
+            {speechError}
           </div>
         </div>
       )}

@@ -235,3 +235,15 @@ def test_refresh_library_updates_stats_and_skips_foreign_folders(tmp_path, monke
     assert calls == ["events", "analyze"]
     e = bl.read_index(lib)["entries"][0]
     assert (e["title"], e["goals"], e["shots"], e["attacker_xg"], e["duration_s"]) == ("keep", 1, 1, 0.25, 3.5)
+
+
+def test_find_entry_exact_match_only():
+    team = lambda f, s: {"formation": f, "style": s, "level": 1.0}
+    e = lambda i, **k: {"entry_id": i, "template": "counter", "ball_owner": "away", "wanted": ["goal_by_team:away"],
+                        "home": team("4-4-2", "balanced"), "away": team("4-3-3", "counter"), **k}
+    r = {"mode": "situation", "home": {**team("4-4-2", "balanced"), "level": 1}, "away": team("4-3-3", "counter"),
+         "situation": {"template": "counter", "ball_owner": "away", "wanted": ["goal_by_team:away"]}}
+    assert bl.find_entry([e("b"), e("a")], r)["entry_id"] == "a"
+    assert bl.find_entry([e("a", template="build_up"), e("b", wanted=["shot_by_team:away"]), e("c", ball_owner="home"),
+                          e("d", away=team("4-3-3", "balanced"))], r) is None
+    assert bl.find_entry([e("a")], {**r, "mode": "free"}) is None

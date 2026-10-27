@@ -73,6 +73,9 @@ async function json<T>(method: string, url: string, body?: unknown): Promise<T> 
   return res.json() as Promise<T>
 }
 
+/** Short-lived Azure Speech token; the key stays on the server. */
+export const speechToken = () => json<{ token: string; region: string }>('GET', '/speech/token')
+
 // ---- recipe ----
 export const getCatalog = (): Promise<Catalog> =>
   MOCK ? mock().then((m) => m.getCatalog()) : json('GET', '/catalog')

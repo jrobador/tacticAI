@@ -133,8 +133,9 @@ export function MatchStats({ bundle, tracking, time, sprint, models }: Props) {
           </div>
           {s !== null && (
             <div className="flex h-1 gap-0.5 overflow-hidden rounded-full">
-              <span className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${s * 100}%` }} />
-              <span className="h-full flex-1 rounded-full bg-[#4a5873]" />
+              {/* Each side in its club colour (as in Broadcast): a grey away bar read as an empty line at 100%. */}
+              <span className="h-full rounded-full bg-[#F26B1D] transition-[width] duration-500" style={{ width: `${s * 100}%` }} />
+              <span className="h-full flex-1 rounded-full bg-[#19A79E]" />
             </div>
           )}
         </div>
