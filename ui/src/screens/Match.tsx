@@ -88,6 +88,10 @@ export function Match({ matchId }: { matchId: string }) {
   const es = profile.lang === 'es'
   const broadcast = modeOf(profile.lens) === 'broadcast'
   const rundown = useRundown(matchId, broadcast)
+  // Faces load ahead: a graphic that airs while the video downloads (the goal takeover) otherwise waits behind it and shows an empty frame.
+  useEffect(() => {
+    for (const id of new Set(rundown?.graphics.map((g) => g.player_id).filter(Boolean))) new Image().src = `/players/${id}.png`
+  }, [rundown])
   const studio = useStudio(matchId, profile.lang, broadcast)
   const reels = useReels(matchId, broadcast)
   const facts = useFanFacts(matchId, broadcast)
@@ -197,7 +201,7 @@ export function Match({ matchId }: { matchId: string }) {
               <SpotlightLayer {...layerProps('one_metric')} />
               <NewcomerLayer {...layerProps('first_match')} />
               {!fan && !broadcast && <EventTicker events={events} time={time} names={names} teams={meta.teams} models={models} />}
-              {profile.player && <PlayerFocus playerId={profile.player} roster={bundle.roster.players} tracking={tracking} events={events} time={time} names={names} sprint={sprint} />}
+              {profile.player && <PlayerFocus playerId={profile.player} roster={bundle.roster.players} tracking={tracking} events={events} time={time} names={names} sprint={sprint} es={es} />}
               {ft && <FullTimeOverlay s={stop.s} lang={profile.lang} teams={meta.teams} score={final} names={names} star={facts?.verdict.figure ?? null} view={neutralFan} opening={studio?.opening ?? null} />}
               {takeover && <GoalTakeover key={stop?.id} g={takeover} lang={profile.lang} names={names} teams={meta.teams} />}
               {stop && !ft && !takeover && (

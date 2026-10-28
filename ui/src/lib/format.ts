@@ -31,23 +31,23 @@ export function isTimelineEvent(e: EnrichedEvent) {
   return e.type === 'pass' && ((e.lines_broken ?? 0) > 0 || e.outcome === 'intercepted')
 }
 
-export function eventTitle(e: EnrichedEvent, names: Names): string {
+export function eventTitle(e: EnrichedEvent, names: Names, es = false): string {
   const who = nameOf(names, e.player_id)
   switch (e.type) {
     case 'goal':
-      return `Goal: ${nameOf(names, e.scorer_id ?? e.player_id)}`
+      return `${es ? 'Gol' : 'Goal'}: ${nameOf(names, e.scorer_id ?? e.player_id)}`
     case 'shot':
-      return `Shot by ${who}${e.xg != null ? ` (engine xG ${e.xg.toFixed(2)})` : ''}`
+      return es ? `Remate de ${who}${e.xg != null ? ` (xG ${e.xg.toFixed(2)})` : ''}` : `Shot by ${who}${e.xg != null ? ` (engine xG ${e.xg.toFixed(2)})` : ''}`
     case 'tackle':
-      return `${who} wins the ball from ${nameOf(names, e.from_player_id)}`
+      return es ? `${who} le roba la pelota a ${nameOf(names, e.from_player_id)}` : `${who} wins the ball from ${nameOf(names, e.from_player_id)}`
     case 'pass':
-      if (e.outcome === 'intercepted') return `${who}'s pass intercepted by ${nameOf(names, e.intercepted_by)}`
-      if ((e.lines_broken ?? 0) > 0) return `${who} breaks ${e.lines_broken} line${e.lines_broken === 1 ? '' : 's'} with a pass`
-      return `${who} passes${e.to_player_id ? ` to ${nameOf(names, e.to_player_id)}` : ''}`
+      if (e.outcome === 'intercepted') return es ? `${nameOf(names, e.intercepted_by)} intercepta el pase de ${who}` : `${who}'s pass intercepted by ${nameOf(names, e.intercepted_by)}`
+      if ((e.lines_broken ?? 0) > 0) return es ? `${who} rompe ${e.lines_broken} línea${e.lines_broken === 1 ? '' : 's'} con un pase` : `${who} breaks ${e.lines_broken} line${e.lines_broken === 1 ? '' : 's'} with a pass`
+      return es ? `Pase de ${who}${e.to_player_id ? ` a ${nameOf(names, e.to_player_id)}` : ''}` : `${who} passes${e.to_player_id ? ` to ${nameOf(names, e.to_player_id)}` : ''}`
     case 'set_piece':
-      return label(e.kind ?? 'Set piece')
+      return label(e.kind ?? (es ? 'Pelota parada' : 'Set piece'))
     case 'carry':
-      return `${who} runs ${Math.round(e.distance_m ?? 0)} m with the ball`
+      return es ? `${who} conduce ${Math.round(e.distance_m ?? 0)} m` : `${who} runs ${Math.round(e.distance_m ?? 0)} m with the ball`
   }
 }
 
