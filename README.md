@@ -1,6 +1,6 @@
 # tacticAI
 
-[![tacticAI demo video](https://img.youtube.com/vi/bpkAspW27DM/maxresdefault.jpg)](https://youtu.be/bpkAspW27DM)
+[![One goal, three audiences: the same match in Analyst, Fan and Broadcast mode](assets/demo.gif)](https://youtu.be/bpkAspW27DM)
 
 ▶ [Watch the 2-minute demo on YouTube](https://youtu.be/bpkAspW27DM)
 
